@@ -1,0 +1,20 @@
+# macOS artifacts
+.DS_Store
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Generated output directories
+output/
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
+# Large high-frequency datasets (keep local)
+data/forex/*/*_1m.csv
+data/forex/*/*_M1.csv
