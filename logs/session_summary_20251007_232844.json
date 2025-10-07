@@ -1,0 +1,62 @@
+{
+  "session_info": {
+    "session_id": "20251007_232844",
+    "start_time": "2025-10-07T23:28:44.615838",
+    "end_time": "2025-10-07T23:29:23.548106",
+    "duration_hours": 0.010814519444444445
+  },
+  "performance": {
+    "session_id": "20251007_232844",
+    "session_duration": 0.01081452,
+    "total_signals": 0,
+    "signals_executed": 0,
+    "total_trades": 85,
+    "strategy_performance": {
+      "momentum": {
+        "trades": 22,
+        "wins": 0,
+        "losses": 22,
+        "win_rate": 0.0,
+        "total_pnl": -116.39,
+        "avg_pnl": -5.29,
+        "avg_win": 0,
+        "avg_loss": 5.29,
+        "profit_factor": 0.0
+      },
+      "funding": {
+        "trades": 34,
+        "wins": 0,
+        "losses": 34,
+        "win_rate": 0.0,
+        "total_pnl": 0.0,
+        "avg_pnl": 0.0,
+        "avg_win": 0,
+        "avg_loss": 0.0,
+        "profit_factor": Infinity
+      },
+      "vol_spike": {
+        "trades": 20,
+        "wins": 4,
+        "losses": 16,
+        "win_rate": 20.0,
+        "total_pnl": -143.07,
+        "avg_pnl": -7.15,
+        "avg_win": 26.79,
+        "avg_loss": 15.64,
+        "profit_factor": 0.43
+      },
+      "mean_reversion": {
+        "trades": 9,
+        "wins": 1,
+        "losses": 8,
+        "win_rate": 11.11,
+        "total_pnl": -87.51,
+        "avg_pnl": -9.72,
+        "avg_win": 29.58,
+        "avg_loss": 14.64,
+        "profit_factor": 0.25
+      }
+    }
+  },
+  "regime_distribution": {}
+}

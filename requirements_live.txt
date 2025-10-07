@@ -1,0 +1,24 @@
+# Bybit Live Trading Requirements
+# Install with: pip install -r requirements_live.txt
+
+# Core dependencies
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# Optional but recommended
+python-dotenv>=1.0.0  # For environment variables
+pybit>=5.6.0  # Official Bybit SDK (alternative to our custom client)
+
+# Logging and monitoring
+colorlog>=6.7.0  # Colored console output
+
+# Notifications (optional)
+python-telegram-bot>=20.0  # For Telegram alerts
+
+# Backtesting dependencies (already have these)
+matplotlib>=3.7.0
+scipy>=1.11.0
+
+# Testing
+pytest>=7.4.0  # For unit tests
