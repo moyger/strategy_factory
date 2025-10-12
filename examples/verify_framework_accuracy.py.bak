@@ -1,0 +1,409 @@
+"""
+Framework Accuracy Verification Test
+
+This script tests the Strategy Factory framework's reliability by:
+1. Running a SIMPLE buy-and-hold strategy (easy to verify manually)
+2. Comparing StrategyGenerator results vs manual calculation
+3. Testing known edge cases
+4. Validating vectorbt portfolio construction
+
+If the framework can't correctly calculate a simple buy-and-hold,
+we can't trust it for complex strategies.
+"""
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import pandas as pd
+import numpy as np
+import yfinance as yf
+import vectorbt as vbt
+from strategy_factory.generator import StrategyGenerator
+
+print("="*80)
+print("STRATEGY FACTORY FRAMEWORK - ACCURACY VERIFICATION")
+print("="*80)
+print("\n🔍 Testing framework reliability with simple strategies")
+
+# ============================================================================
+# TEST 1: BUY AND HOLD BTC (Simplest possible strategy)
+# ============================================================================
+print("\n" + "="*80)
+print("TEST 1: BUY-AND-HOLD BTC")
+print("="*80)
+print("\nThis is the SIMPLEST strategy - buy on day 1, hold forever")
+print("Should be trivial to calculate manually and verify")
+
+# Download BTC
+print("\nDownloading BTC-USD (2020-2024)...")
+btc = yf.download('BTC-USD', start='2020-01-01', end='2024-12-31', progress=False)
+btc_close = btc['Close'].ffill()
+
+print(f"✅ Data: {len(btc_close)} days")
+print(f"   Start: {btc_close.index[0].date()} - ${float(btc_close.iloc[0]):,.2f}")
+print(f"   End: {btc_close.index[-1].date()} - ${float(btc_close.iloc[-1]):,.2f}")
+
+# Manual calculation
+initial_price = float(btc_close.iloc[0])
+final_price = float(btc_close.iloc[-1])
+manual_return = ((final_price / initial_price) - 1) * 100
+
+print(f"\n📊 MANUAL CALCULATION:")
+print(f"   Buy: ${initial_price:,.2f}")
+print(f"   Sell: ${final_price:,.2f}")
+print(f"   Return: {manual_return:+.1f}%")
+
+# VectorBT calculation (framework method)
+print(f"\n📊 VECTORBT CALCULATION:")
+
+# Create simple buy-and-hold portfolio
+initial_capital = 100000
+num_shares = initial_capital / initial_price
+
+portfolio = vbt.Portfolio.from_holding(
+    close=btc_close,
+    init_cash=initial_capital,
+    fees=0
+)
+
+def extract_value(val):
+    if isinstance(val, pd.Series):
+        return float(val.values[0]) if len(val) > 0 else 0.0
+    elif isinstance(val, pd.DataFrame):
+        return float(val.values[0][0]) if len(val) > 0 else 0.0
+    return float(val)
+
+vbt_return = extract_value(portfolio.total_return()) * 100
+vbt_final_value = extract_value(portfolio.final_value())
+
+print(f"   Initial: ${initial_capital:,.2f}")
+print(f"   Final: ${vbt_final_value:,.2f}")
+print(f"   Return: {vbt_return:+.1f}%")
+
+# Compare
+diff = abs(manual_return - vbt_return)
+print(f"\n✅ VERIFICATION:")
+print(f"   Manual: {manual_return:+.1f}%")
+print(f"   VectorBT: {vbt_return:+.1f}%")
+print(f"   Difference: {diff:.2f}%")
+
+if diff < 0.1:
+    print(f"   ✅ PASS - VectorBT matches manual calculation")
+else:
+    print(f"   ❌ FAIL - VectorBT differs by {diff:.2f}%")
+
+test1_pass = diff < 0.1
+
+# ============================================================================
+# TEST 2: SIMPLE SMA CROSSOVER (Verifiable signals)
+# ============================================================================
+print("\n" + "="*80)
+print("TEST 2: SIMPLE SMA CROSSOVER")
+print("="*80)
+print("\nStrategy: Buy when 50-day SMA > 200-day SMA, sell when below")
+
+# Calculate SMAs
+sma_50 = btc_close.rolling(50).mean()
+sma_200 = btc_close.rolling(200).mean()
+
+# Generate signals
+entries = (sma_50 > sma_200) & (sma_50.shift(1) <= sma_200.shift(1))
+exits = (sma_50 < sma_200) & (sma_50.shift(1) >= sma_200.shift(1))
+
+num_entries = int(entries.sum())
+num_exits = int(exits.sum())
+
+print(f"\n📊 SIGNAL COUNT:")
+print(f"   Buy signals: {num_entries}")
+print(f"   Sell signals: {num_exits}")
+print(f"   Total signals: {num_entries + num_exits}")
+
+# Backtest with VectorBT
+portfolio_sma = vbt.Portfolio.from_signals(
+    close=btc_close,
+    entries=entries,
+    exits=exits,
+    init_cash=100000,
+    fees=0.001
+)
+
+sma_return = extract_value(portfolio_sma.total_return()) * 100
+sma_trades = portfolio_sma.trades.count()
+if isinstance(sma_trades, pd.Series):
+    sma_trades = int(sma_trades.values[0])
+
+print(f"\n📊 BACKTEST RESULTS:")
+print(f"   Total Return: {sma_return:+.1f}%")
+print(f"   Num Trades: {sma_trades}")
+print(f"   Trades Expected: ~{num_entries} (one per entry)")
+
+# Verification
+trades_match = abs(sma_trades - num_entries) <= 1  # Allow 1 trade difference
+
+print(f"\n✅ VERIFICATION:")
+print(f"   Signal count: {num_entries}")
+print(f"   Trade count: {sma_trades}")
+if trades_match:
+    print(f"   ✅ PASS - Trade count matches signals")
+else:
+    print(f"   ❌ FAIL - Trade count doesn't match signals")
+
+test2_pass = trades_match and sma_return != 0
+
+# ============================================================================
+# TEST 3: REBALANCING PORTFOLIO (Our crypto strategy type)
+# ============================================================================
+print("\n" + "="*80)
+print("TEST 3: QUARTERLY REBALANCING PORTFOLIO")
+print("="*80)
+print("\nStrategy: Buy 50% BTC + 50% ETH, rebalance quarterly")
+
+# Download BTC and ETH
+print("\nDownloading BTC-USD and ETH-USD...")
+data = yf.download(['BTC-USD', 'ETH-USD'], start='2020-01-01', end='2024-12-31', progress=False)
+
+if isinstance(data.columns, pd.MultiIndex):
+    close = data['Close'].copy()
+else:
+    close = data[['Close']].copy()
+
+close = close.ffill()
+
+print(f"✅ Data: {len(close)} days, 2 cryptos")
+
+# Create rebalancing allocations
+allocations = pd.DataFrame(0.0, index=close.index, columns=close.columns)
+rebalance_dates = pd.date_range(start=close.index[0], end=close.index[-1], freq='QS-JAN')
+
+print(f"   Rebalance dates: {len(rebalance_dates)}")
+
+# Set 50/50 allocation
+for date in close.index:
+    if date in rebalance_dates:
+        allocations.loc[date, 'BTC-USD'] = 0.50
+        allocations.loc[date, 'ETH-USD'] = 0.50
+
+# Hold between rebalances
+last_allocation = None
+for date in close.index:
+    if date in rebalance_dates or last_allocation is None:
+        last_allocation = allocations.loc[date].copy()
+    else:
+        allocations.loc[date] = last_allocation
+
+active_days = (allocations.sum(axis=1) > 0).sum()
+print(f"   Active days: {active_days} / {len(close)}")
+
+# Backtest with VectorBT
+portfolio_rebal = vbt.Portfolio.from_orders(
+    close=close,
+    size=allocations  # Use allocations directly (0.0-1.0),
+    size_type='amount',
+    init_cash=100000,
+    fees=0.001,
+    freq='1D'
+)
+
+rebal_return = extract_value(portfolio_rebal.total_return()) * 100
+rebal_trades = portfolio_rebal.trades.count()
+if isinstance(rebal_trades, pd.Series):
+    rebal_trades = int(rebal_trades.sum())
+
+print(f"\n📊 BACKTEST RESULTS:")
+print(f"   Total Return: {rebal_return:+.1f}%")
+print(f"   Num Trades: {rebal_trades}")
+print(f"   Expected trades: ~{len(rebalance_dates) * 2} (2 per rebalance)")
+
+# Manual verification - calculate buy-and-hold 50/50 for comparison
+btc_return = (close['BTC-USD'].iloc[-1] / close['BTC-USD'].iloc[0] - 1)
+eth_return = (close['ETH-USD'].iloc[-1] / close['ETH-USD'].iloc[0] - 1)
+manual_5050 = ((btc_return + eth_return) / 2) * 100
+
+print(f"\n📊 MANUAL 50/50 BUY-HOLD:")
+print(f"   BTC Return: {btc_return*100:+.1f}%")
+print(f"   ETH Return: {eth_return*100:+.1f}%")
+print(f"   Average: {manual_5050:+.1f}%")
+
+print(f"\n✅ VERIFICATION:")
+print(f"   Portfolio return: {rebal_return:+.1f}%")
+print(f"   Manual 50/50: {manual_5050:+.1f}%")
+print(f"   Difference: {abs(rebal_return - manual_5050):.1f}%")
+
+# Rebalancing should be close to buy-hold for balanced portfolio
+reasonable = abs(rebal_return - manual_5050) < 50  # Within 50% is reasonable
+has_trades = rebal_trades > 0
+
+if reasonable and has_trades:
+    print(f"   ✅ PASS - Portfolio construction working")
+else:
+    print(f"   ❌ FAIL - Portfolio construction issue")
+    print(f"      Reasonable diff: {reasonable}")
+    print(f"      Has trades: {has_trades}")
+
+test3_pass = reasonable and has_trades
+
+# ============================================================================
+# TEST 4: STRATEGY GENERATOR METHOD (Our framework)
+# ============================================================================
+print("\n" + "="*80)
+print("TEST 4: STRATEGY GENERATOR METHOD")
+print("="*80)
+print("\nTesting the generate_crypto_momentum_strategies() method")
+
+# Prepare data
+crypto_prices = close.copy()
+
+generator = StrategyGenerator(initial_capital=100000, commission=0.001)
+
+print(f"\nTesting with:")
+print(f"   Cryptos: BTC, ETH")
+print(f"   Universe: fixed")
+print(f"   ROC period: 90 days")
+print(f"   Positions: 2 (100% invested)")
+
+results = generator.generate_crypto_momentum_strategies(
+    prices=crypto_prices,
+    universe_type='fixed',
+    roc_periods=[90],
+    rebalance_freq=['quarterly'],
+    num_positions=[2],
+    verbose=False
+)
+
+if len(results) > 0:
+    best = results.iloc[0]
+    gen_return = best['total_return']
+    gen_sharpe = best['sharpe_ratio']
+    gen_trades = best['num_trades']
+
+    print(f"\n📊 GENERATOR RESULTS:")
+    print(f"   Total Return: {gen_return:+.1f}%")
+    print(f"   Sharpe Ratio: {gen_sharpe:.2f}")
+    print(f"   Num Trades: {gen_trades}")
+
+    # Compare to manual rebalancing test
+    print(f"\n✅ VERIFICATION:")
+    print(f"   Generator: {gen_return:+.1f}%")
+    print(f"   Manual test 3: {rebal_return:+.1f}%")
+    print(f"   Difference: {abs(gen_return - rebal_return):.1f}%")
+
+    # Should be somewhat similar (different ROC vs 50/50, but same magnitude)
+    same_magnitude = (gen_return > 0 and rebal_return > 0) or (gen_return < 0 and rebal_return < 0)
+    has_results = gen_return != 0
+
+    if same_magnitude and has_results:
+        print(f"   ✅ PASS - Generator producing results")
+    else:
+        print(f"   ❌ FAIL - Generator issue")
+        print(f"      Same sign: {same_magnitude}")
+        print(f"      Has results: {has_results}")
+
+    test4_pass = same_magnitude and has_results
+else:
+    print(f"\n❌ FAIL - Generator returned no results")
+    test4_pass = False
+
+# ============================================================================
+# TEST 5: EDGE CASE - ZERO TRADES
+# ============================================================================
+print("\n" + "="*80)
+print("TEST 5: EDGE CASE - NO SIGNALS")
+print("="*80)
+print("\nStrategy: Impossible conditions (never triggers)")
+
+# Create impossible entry condition
+impossible_entries = pd.Series(False, index=btc_close.index)
+impossible_exits = pd.Series(False, index=btc_close.index)
+
+portfolio_zero = vbt.Portfolio.from_signals(
+    close=btc_close,
+    entries=impossible_entries,
+    exits=impossible_exits,
+    init_cash=100000,
+    fees=0
+)
+
+zero_return = extract_value(portfolio_zero.total_return()) * 100
+zero_trades = portfolio_zero.trades.count()
+if isinstance(zero_trades, pd.Series):
+    zero_trades = int(zero_trades.values[0])
+
+print(f"\n📊 RESULTS:")
+print(f"   Return: {zero_return:+.1f}%")
+print(f"   Trades: {zero_trades}")
+
+print(f"\n✅ VERIFICATION:")
+if zero_return == 0 and zero_trades == 0:
+    print(f"   ✅ PASS - Correctly handling zero trades")
+    test5_pass = True
+else:
+    print(f"   ❌ FAIL - Should return 0% with 0 trades")
+    test5_pass = False
+
+# ============================================================================
+# FINAL VERDICT
+# ============================================================================
+print("\n" + "="*80)
+print("FINAL VERDICT")
+print("="*80)
+
+tests = [
+    ('Buy-and-Hold BTC', test1_pass),
+    ('SMA Crossover Signals', test2_pass),
+    ('Quarterly Rebalancing', test3_pass),
+    ('Strategy Generator', test4_pass),
+    ('Zero Trades Edge Case', test5_pass)
+]
+
+passed = sum(1 for _, p in tests if p)
+total = len(tests)
+
+print(f"\n📊 TEST RESULTS: {passed}/{total} PASSED")
+for name, result in tests:
+    status = "✅ PASS" if result else "❌ FAIL"
+    print(f"   {status} - {name}")
+
+print(f"\n" + "="*80)
+if passed == total:
+    print("✅ FRAMEWORK IS RELIABLE")
+    print("="*80)
+    print("""
+All tests passed. The Strategy Factory framework is calculating correctly.
+
+If your crypto backtest showed weird results, the issue is likely:
+1. Data quality (missing/incorrect prices)
+2. Strategy logic (allocations not being applied)
+3. Parameter configuration (wrong settings)
+
+NOT the framework itself - vectorbt is working correctly.
+""")
+elif passed >= 3:
+    print("⚠️ FRAMEWORK IS MOSTLY RELIABLE")
+    print("="*80)
+    print(f"""
+{passed}/{total} tests passed. The framework core (vectorbt) is working,
+but there may be issues with specific methods.
+
+Review failed tests above to identify specific problems.
+""")
+else:
+    print("❌ FRAMEWORK HAS SERIOUS ISSUES")
+    print("="*80)
+    print(f"""
+Only {passed}/{total} tests passed. There are fundamental issues with
+the framework that need to be fixed before trusting any backtest results.
+
+DO NOT use this framework for strategy testing until issues are resolved.
+""")
+
+# Save results
+output_dir = Path('results/crypto')
+output_dir.mkdir(parents=True, exist_ok=True)
+
+verification_results = pd.DataFrame([
+    {'Test': name, 'Passed': result} for name, result in tests
+])
+verification_results.to_csv(output_dir / 'framework_verification_results.csv', index=False)
+
+print(f"\n📁 Results saved to: {output_dir}/framework_verification_results.csv")

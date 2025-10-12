@@ -226,9 +226,13 @@ class StrategyGenerator:
             rolling_high = pd.Series(high).rolling(lookback).max()
             rolling_low = pd.Series(low).rolling(lookback).min()
 
-            # Generate signals
-            entries = close > rolling_high * (1 + breakout_pct / 100)
-            exits = close < rolling_low * (1 - breakout_pct / 100)
+            # Calculate breakout bands
+            upper_band = rolling_high * (1 + breakout_pct / 100)
+            lower_band = rolling_low * (1 - breakout_pct / 100)
+
+            # Generate signals (compare to previous period's band to avoid lookahead)
+            entries = pd.Series(close) > upper_band.shift(1)
+            exits = pd.Series(close) < lower_band.shift(1)
 
             # Run backtest
             portfolio = vbt.Portfolio.from_signals(
@@ -331,19 +335,81 @@ class StrategyGenerator:
     def _calculate_metrics(self, portfolio: vbt.Portfolio) -> Dict:
         """Calculate performance metrics from portfolio"""
         try:
-            stats = portfolio.stats()
+            # Extract values safely
+            def extract_value(val):
+                if isinstance(val, pd.Series):
+                    return float(val.values[0]) if len(val) > 0 else 0.0
+                elif isinstance(val, pd.DataFrame):
+                    return float(val.values[0][0]) if len(val) > 0 else 0.0
+                return float(val)
+
+            # Calculate total return
+            total_return = extract_value(portfolio.total_return()) * 100
+
+            # Calculate Sharpe ratio
+            try:
+                sharpe = extract_value(portfolio.sharpe_ratio())
+            except:
+                try:
+                    sharpe = extract_value(portfolio.sharpe_ratio(freq='1D'))
+                except:
+                    sharpe = 0.0
+
+            # Calculate max drawdown
+            max_dd = extract_value(portfolio.max_drawdown()) * 100
+
+            # Calculate trade metrics
+            trades = portfolio.trades
+            num_trades = trades.count() if hasattr(trades, 'count') else 0
+
+            if isinstance(num_trades, pd.Series):
+                num_trades = int(num_trades.sum())
+            else:
+                num_trades = int(num_trades) if num_trades > 0 else 0
+
+            win_rate = 0
+            profit_factor = 0
+            avg_trade = 0
+
+            if num_trades > 0:
+                try:
+                    win_rate = extract_value(trades.win_rate())
+                except:
+                    win_rate = 0
+
+                try:
+                    profit_factor = extract_value(trades.profit_factor())
+                except:
+                    profit_factor = 0
+
+                try:
+                    avg_trade = extract_value(trades.pnl.mean())
+                except:
+                    avg_trade = 0
+
+            # Calculate trades per year
+            portfolio_value = portfolio.value()
+            if isinstance(portfolio_value, pd.DataFrame):
+                num_days = len(portfolio_value)
+            elif isinstance(portfolio_value, pd.Series):
+                num_days = len(portfolio_value)
+            else:
+                num_days = 252
+
+            trades_per_year = (num_trades / (num_days / 252)) if num_days > 0 else 0
 
             return {
-                'total_return': portfolio.total_return() * 100,  # Convert to percentage
-                'sharpe_ratio': portfolio.sharpe_ratio() if portfolio.sharpe_ratio() is not None else 0,
-                'max_drawdown': portfolio.max_drawdown() * 100,  # Convert to percentage
-                'win_rate': portfolio.trades.win_rate() if portfolio.trades.count() > 0 else 0,
-                'num_trades': portfolio.trades.count(),
-                'profit_factor': portfolio.trades.profit_factor() if portfolio.trades.count() > 0 else 0,
-                'avg_trade': portfolio.trades.pnl.mean() if portfolio.trades.count() > 0 else 0,
-                'trades_per_year': portfolio.trades.count() / (len(portfolio.value()) / 252) if len(portfolio.value()) > 0 else 0
+                'total_return': total_return,
+                'sharpe_ratio': sharpe,
+                'max_drawdown': max_dd,
+                'win_rate': win_rate,
+                'num_trades': num_trades,
+                'profit_factor': profit_factor,
+                'avg_trade': avg_trade,
+                'trades_per_year': trades_per_year
             }
         except Exception as e:
+            print(f"      Warning: Metrics calculation error: {e}")
             # Return default values if calculation fails
             return {
                 'total_return': 0,
@@ -409,3 +475,198 @@ class StrategyGenerator:
 
         print(f"📊 Filtered: {len(filtered)} / {len(results)} strategies passed criteria")
         return filtered
+
+    def generate_crypto_momentum_strategies(self,
+                                           prices: pd.DataFrame,
+                                           universe_type: str = 'fixed',
+                                           roc_periods: List[int] = [30, 60, 90, 100],
+                                           rebalance_freq: List[str] = ['quarterly'],
+                                           num_positions: List[int] = [5, 7, 10],
+                                           verbose: bool = True) -> pd.DataFrame:
+        """
+        Generate crypto momentum strategies with different universe selection methods.
+
+        This method tests different approaches to crypto portfolio construction:
+        - Fixed universe (baseline)
+        - Dynamic rebalancing with different selection criteria
+        - Various rebalancing frequencies
+        - Different portfolio sizes
+
+        Based on research showing fixed universe outperforms dynamic rebalancing
+        for crypto due to winner-take-all dynamics and persistent BTC/ETH dominance.
+
+        Args:
+            prices: DataFrame with crypto prices (columns = tickers, index = dates)
+            universe_type: 'fixed', 'roc_momentum', 'relative_strength', 'breakout'
+            roc_periods: ROC lookback periods to test
+            rebalance_freq: ['quarterly', 'monthly', 'annual', 'none']
+            num_positions: Number of positions to hold
+            verbose: Print progress
+
+        Returns:
+            DataFrame with all strategy results, sorted by Sharpe ratio
+
+        Example:
+            >>> generator = StrategyGenerator()
+            >>> # Test fixed universe with different parameters
+            >>> results = generator.generate_crypto_momentum_strategies(
+            ...     prices=crypto_prices,
+            ...     universe_type='fixed',
+            ...     roc_periods=[90, 100],
+            ...     num_positions=[5, 7]
+            ... )
+            >>> print(results.head(10))
+        """
+        if verbose:
+            total_combos = len(roc_periods) * len(rebalance_freq) * len(num_positions)
+            print(f"🔄 Generating Crypto Momentum strategies...")
+            print(f"   Universe type: {universe_type}")
+            print(f"   Testing {total_combos} combinations")
+
+        results = []
+        strategy_id = 0
+
+        # Define rebalance dates based on frequency
+        def get_rebalance_dates(freq: str) -> pd.DatetimeIndex:
+            if freq == 'none':
+                return pd.DatetimeIndex([])  # No rebalancing
+            elif freq == 'quarterly':
+                return pd.date_range(start=prices.index[0], end=prices.index[-1], freq='QS-JAN')
+            elif freq == 'monthly':
+                return pd.date_range(start=prices.index[0], end=prices.index[-1], freq='MS')
+            elif freq == 'annual':
+                return pd.date_range(start=prices.index[0], end=prices.index[-1], freq='AS-JAN')
+            else:
+                return pd.date_range(start=prices.index[0], end=prices.index[-1], freq='QS-JAN')
+
+        for roc_period, rebal_freq, n_positions in product(roc_periods, rebalance_freq, num_positions):
+            try:
+                # Generate allocations
+                allocations = pd.DataFrame(0.0, index=prices.index, columns=prices.columns)
+                rebalance_dates = get_rebalance_dates(rebal_freq)
+
+                # Fixed universe (baseline)
+                if universe_type == 'fixed':
+                    # Use top cryptos by market cap (BTC, ETH always included)
+                    # For this test, use first N columns (assumes prices sorted by importance)
+                    universe = prices.columns[:min(10, len(prices.columns))]
+                    universe_prices = prices[universe]
+
+                    for date in prices.index:
+                        if date < prices.index[0] + pd.Timedelta(days=roc_period):
+                            continue
+
+                        # Rebalance logic
+                        if len(rebalance_dates) == 0 or date in rebalance_dates:
+                            # Calculate ROC
+                            price_slice = universe_prices.loc[:date]
+                            if len(price_slice) < roc_period:
+                                continue
+
+                            roc = (price_slice.iloc[-1] / price_slice.iloc[-roc_period] - 1).fillna(0)
+                            top_n = roc.nlargest(n_positions).index.tolist()
+
+                            # Equal weight allocation
+                            for ticker in top_n:
+                                allocations.loc[date, ticker] = 1.0 / n_positions
+
+                # Dynamic universe with ROC momentum
+                elif universe_type == 'roc_momentum':
+                    for date in prices.index:
+                        if date < prices.index[0] + pd.Timedelta(days=roc_period):
+                            continue
+
+                        if len(rebalance_dates) == 0 or date in rebalance_dates:
+                            # Select from full universe
+                            price_slice = prices.loc[:date]
+                            if len(price_slice) < roc_period:
+                                continue
+
+                            roc = (price_slice.iloc[-1] / price_slice.iloc[-roc_period] - 1).fillna(0)
+                            top_n = roc.nlargest(n_positions).index.tolist()
+
+                            for ticker in top_n:
+                                allocations.loc[date, ticker] = 1.0 / n_positions
+
+                # Relative Strength
+                elif universe_type == 'relative_strength':
+                    # Use BTC as benchmark (first column assumed to be BTC)
+                    btc_prices = prices.iloc[:, 0]
+
+                    for date in prices.index:
+                        if date < prices.index[0] + pd.Timedelta(days=roc_period):
+                            continue
+
+                        if len(rebalance_dates) == 0 or date in rebalance_dates:
+                            price_slice = prices.loc[:date]
+                            btc_slice = btc_prices.loc[:date]
+
+                            if len(price_slice) < roc_period:
+                                continue
+
+                            # Calculate relative strength vs BTC
+                            crypto_roc = (price_slice.iloc[-1] / price_slice.iloc[-roc_period] - 1).fillna(0)
+                            btc_roc = (btc_slice.iloc[-1] / btc_slice.iloc[-roc_period] - 1)
+                            relative_strength = crypto_roc - btc_roc
+
+                            top_n = relative_strength.nlargest(n_positions).index.tolist()
+
+                            for ticker in top_n:
+                                allocations.loc[date, ticker] = 1.0 / n_positions
+
+                # Hold positions between rebalance dates
+                last_allocation = None
+                for date in prices.index:
+                    if len(rebalance_dates) == 0:
+                        break  # No rebalancing, keep daily updates
+
+                    if date in rebalance_dates or last_allocation is None:
+                        last_allocation = allocations.loc[date].copy()
+                    else:
+                        allocations.loc[date] = last_allocation
+
+                # Backtest with vectorbt
+                # FIXED: Use 'targetpercent' for rebalancing portfolios
+                # This tells vectorbt the TARGET allocation, so it automatically rebalances
+                # Bug was: size_type='amount' doesn't trigger rebalancing
+                portfolio = vbt.Portfolio.from_orders(
+                    close=prices,
+                    size=allocations,  # Use allocations directly (0.0-1.0)
+                    size_type='targetpercent',
+                    init_cash=self.initial_capital,
+                    fees=self.commission,
+                    freq='1D'
+                )
+
+                # Calculate metrics
+                metrics = self._calculate_metrics(portfolio)
+
+                results.append(StrategyResult(
+                    strategy_id=strategy_id,
+                    params={
+                        'type': f'Crypto_{universe_type}',
+                        'roc_period': roc_period,
+                        'rebalance_freq': rebal_freq,
+                        'num_positions': n_positions,
+                        'universe_type': universe_type
+                    },
+                    **metrics
+                ))
+
+                strategy_id += 1
+
+            except Exception as e:
+                if verbose:
+                    print(f"   ⚠️ Failed combo: roc={roc_period}, freq={rebal_freq}, n={n_positions}: {e}")
+                continue
+
+        df_results = pd.DataFrame([vars(r) for r in results])
+        df_results = df_results.sort_values('sharpe_ratio', ascending=False)
+
+        if verbose:
+            print(f"✅ Generated {len(df_results)} strategies")
+            if len(df_results) > 0:
+                print(f"   Best Sharpe: {df_results['sharpe_ratio'].max():.2f}")
+                print(f"   Best Return: {df_results['total_return'].max():.1f}%")
+
+        return df_results

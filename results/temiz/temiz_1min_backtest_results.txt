@@ -1,0 +1,220 @@
+✅ Alpaca API keys found in environment variables
+
+╔══════════════════════════════════════════════════════════════╗
+║   TEMIZ STRATEGY - 1-MINUTE BACKTEST (FULL VALIDATION)      ║
+╚══════════════════════════════════════════════════════════════╝
+
+Testing on known parabolic days with ACTUAL 1-minute intraday data:
+- GME meme rallies
+- AMC theater squeeze
+- Recent volatile stocks
+
+This will take 5-10 minutes...
+
+✅ Alpaca data loader initialized (PAPER mode)
+
+📊 Testing 7 high-volatility days...
+============================================================
+
+📈 GME on 2021-01-28
+------------------------------------------------------------
+   Downloaded 352 1-minute bars
+
+============================================================
+Backtesting GME - 2021-01-28
+============================================================
+Found 3 potential signals
+   🔴 10:51 - SHORT 18 @ $427.87
+      Setup: FIRST_RED_DAY (MEDIUM)
+      Stop: $450.09, R1: $397.17, R2: $370.71
+   ❌ 10:57 - STOP @ $450.09 | -0.84R | $-400
+   🔴 11:02 - SHORT 20 @ $489.88
+      Setup: FIRST_RED_DAY (MEDIUM)
+      Stop: $509.85, R1: $460.21, R2: $435.39
+   ❌ 11:03 - STOP @ $509.85 | -0.80R | $-399
+   🔴 14:46 - SHORT 16 @ $358.55
+      Setup: BACKSIDE (LOW)
+      Stop: $385.56, R1: $324.44, R2: $293.88
+   ❌ 14:46 - STOP @ $385.56 | -0.88R | $-432
+
+📊 Day Summary:
+   Trades: 3
+   Day P&L: $-1,231.84 (-1.23%)
+   Ending Equity: $98,768.16
+
+📈 GME on 2021-02-24
+------------------------------------------------------------
+   Downloaded 198 1-minute bars
+
+============================================================
+Backtesting GME - 2021-02-24
+============================================================
+Found 2 potential signals
+   ❌ 14:35 - Short unavailable (BACKSIDE)
+   🔴 14:36 - SHORT 167 @ $45.73
+      Setup: BACKSIDE (LOW)
+      Stop: $48.45, R1: $42.55, R2: $39.60
+   ❌ 15:14 - STOP @ $48.45 | -0.92R | $-455
+
+📊 Day Summary:
+   Trades: 1
+   Day P&L: $-455.49 (-0.46%)
+   Ending Equity: $98,312.67
+
+📈 GME on 2024-06-07
+------------------------------------------------------------
+   Downloaded 363 1-minute bars
+
+============================================================
+Backtesting GME - 2024-06-07
+============================================================
+Found 1 potential signals
+   🔴 13:31 - SHORT 194 @ $37.68
+      Setup: BACKSIDE (LOW)
+      Stop: $40.02, R1: $34.97, R2: $32.44
+   ❌ 13:37 - STOP @ $40.02 | -0.93R | $-455
+
+📊 Day Summary:
+   Trades: 1
+   Day P&L: $-455.38 (-0.46%)
+   Ending Equity: $97,857.29
+
+📈 AMC on 2021-06-02
+------------------------------------------------------------
+   Downloaded 391 1-minute bars
+
+============================================================
+Backtesting AMC - 2021-06-02
+============================================================
+Found 2 potential signals
+   🔴 10:00 - SHORT 146 @ $43.15
+      Setup: BACKSIDE (LOW)
+      Stop: $45.65, R1: $38.95, R2: $35.61
+   ✅ 13:31 - R2 (1/3) @ $35.61 | 2.25R | $+361
+   ✅ 13:32 - R1 (1/3) @ $38.95 | 1.25R | $+201
+   ✅ 13:33 - VWAP (runner) @ $38.13 | 1.50R | $+251
+   🔴 15:58 - SHORT 194 @ $46.75
+      Setup: FIRST_RED_DAY (MEDIUM)
+      Stop: $48.82, R1: $43.76, R2: $41.23
+   ⏰ 15:58 - EOD @ $46.29 | 0.18R | $+89
+
+📊 Day Summary:
+   Trades: 2
+   Day P&L: $+901.94 (+0.92%)
+   Ending Equity: $98,759.22
+
+📈 AMC on 2021-05-28
+------------------------------------------------------------
+   Downloaded 391 1-minute bars
+
+============================================================
+Backtesting AMC - 2021-05-28
+============================================================
+Found 1 potential signals
+   🔴 10:29 - SHORT 306 @ $32.52
+      Setup: FIRST_RED_DAY (MEDIUM)
+      Stop: $33.51, R1: $30.89, R2: $29.59
+   ✅ 11:53 - R2 (1/3) @ $29.59 | 2.25R | $+299
+   ✅ 11:54 - R1 (1/3) @ $30.89 | 1.25R | $+166
+   ✅ 11:55 - VWAP (runner) @ $30.96 | 1.19R | $+158
+
+📊 Day Summary:
+   Trades: 1
+   Day P&L: $+622.73 (+0.63%)
+   Ending Equity: $99,381.95
+
+📈 TSLA on 2020-02-04
+------------------------------------------------------------
+   Downloaded 354 1-minute bars
+
+============================================================
+Backtesting TSLA - 2020-02-04
+============================================================
+Found 5 potential signals
+   ❌ 14:30 - Short unavailable (BACKSIDE)
+   ❌ 14:31 - Short unavailable (BACKSIDE)
+   ❌ 14:32 - Short unavailable (BACKSIDE)
+   🔴 14:33 - SHORT 7 @ $842.28
+      Setup: BACKSIDE (LOW)
+      Stop: $907.80, R1: $768.38, R2: $698.67
+   ❌ 14:34 - Short unavailable (BACKSIDE)
+   ❌ 14:46 - STOP @ $907.80 | -0.94R | $-459
+
+📊 Day Summary:
+   Trades: 1
+   Day P&L: $-458.67 (-0.46%)
+   Ending Equity: $98,923.28
+
+📈 NVDA on 2024-02-22
+------------------------------------------------------------
+   Downloaded 386 1-minute bars
+
+============================================================
+Backtesting NVDA - 2024-02-22
+============================================================
+Found 0 potential signals
+
+📊 Day Summary:
+   Trades: 0
+   Day P&L: $+0.00 (+0.00%)
+   Ending Equity: $98,923.28
+
+============================================================
+
+============================================================
+BACKTEST RESULTS
+============================================================
+
+📈 Performance:
+   Initial Capital: $100,000
+   Ending Equity: $98,923
+   Total Return: -1.08%
+   Net P&L: $-1,077
+
+📊 Trade Statistics:
+   Total Trades: 9
+   Winning Trades: 3 (33.3%)
+   Losing Trades: 6
+   Average Win: $166
+   Average Loss: $-434
+   Average R: -0.27R
+   Profit Factor: 0.19
+
+🎯 By Setup Type:
+   FIRST_RED_DAY:
+      Trades: 4 | WR: 50.0% | Avg R: -0.07R | P&L: $-552
+   BACKSIDE:
+      Trades: 5 | WR: 20.0% | Avg R: -0.43R | P&L: $-1,551
+
+🎖️  By Conviction:
+   MEDIUM:
+      Trades: 4 | WR: 50.0% | Avg R: -0.07R | P&L: $-552
+   LOW:
+      Trades: 5 | WR: 20.0% | Avg R: -0.43R | P&L: $-1,551
+
+============================================================
+COMPARISON: 1-Minute vs Daily Data
+============================================================
+
+Daily Backtest (approximate):
+   - 9 trades, 100% win rate (unrealistic)
+   - +17.06% return
+   - 3.58R average
+   - Used daily bars (coarse)
+
+1-Minute Backtest (precise):
+   - See results above
+   - More realistic win rate
+   - Better entry/exit timing
+   - Shows actual stop losses hit
+
+
+📊 RESULTS:
+   Trades: 9
+   Win Rate: 33.3%
+   Return: -1.08%
+
+❌ NEEDS OPTIMIZATION
+   • Win rate or returns too low
+   • Adjust parameters
+   • Add filters (news, history)

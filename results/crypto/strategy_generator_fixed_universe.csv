@@ -1,0 +1,13 @@
+strategy_id,params,total_return,sharpe_ratio,max_drawdown,win_rate,num_trades,profit_factor,avg_trade,trades_per_year
+0,"{'type': 'Crypto_fixed', 'roc_period': 60, 'rebalance_freq': 'quarterly', 'num_positions': 5, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+1,"{'type': 'Crypto_fixed', 'roc_period': 60, 'rebalance_freq': 'quarterly', 'num_positions': 7, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+2,"{'type': 'Crypto_fixed', 'roc_period': 60, 'rebalance_freq': 'monthly', 'num_positions': 5, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+3,"{'type': 'Crypto_fixed', 'roc_period': 60, 'rebalance_freq': 'monthly', 'num_positions': 7, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+4,"{'type': 'Crypto_fixed', 'roc_period': 90, 'rebalance_freq': 'quarterly', 'num_positions': 5, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+5,"{'type': 'Crypto_fixed', 'roc_period': 90, 'rebalance_freq': 'quarterly', 'num_positions': 7, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+6,"{'type': 'Crypto_fixed', 'roc_period': 90, 'rebalance_freq': 'monthly', 'num_positions': 5, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+7,"{'type': 'Crypto_fixed', 'roc_period': 90, 'rebalance_freq': 'monthly', 'num_positions': 7, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+8,"{'type': 'Crypto_fixed', 'roc_period': 100, 'rebalance_freq': 'quarterly', 'num_positions': 5, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+9,"{'type': 'Crypto_fixed', 'roc_period': 100, 'rebalance_freq': 'quarterly', 'num_positions': 7, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+10,"{'type': 'Crypto_fixed', 'roc_period': 100, 'rebalance_freq': 'monthly', 'num_positions': 5, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0
+11,"{'type': 'Crypto_fixed', 'roc_period': 100, 'rebalance_freq': 'monthly', 'num_positions': 7, 'universe_type': 'fixed'}",0,0,0,0,0,0,0,0

@@ -1,0 +1,162 @@
+================================================================================
+FULL VALIDATION - TOP 20 REBALANCED UNIVERSE
+================================================================================
+
+Period: 2020-10-11 to 2025-10-10
+
+📥 Downloading data...
+  2021: 20 cryptos...
+     ✅ 20 downloaded
+  2022: 20 cryptos...
+     ✅ 20 downloaded
+  2023: 20 cryptos...
+     ✅ 20 downloaded
+  2024: 20 cryptos...
+     ✅ 20 downloaded
+  2025: 20 cryptos...
+     ✅ 20 downloaded
+  BTC-USD...
+     ✅ Done
+  PAXG-USD...
+     ✅ Done
+
+✅ Total unique cryptos: 31
+
+================================================================================
+WALK-FORWARD ANALYSIS - TOP 20 REBALANCED
+================================================================================
+
+--- Fold 1 ---
+Test: 2021-10-11 to 2022-01-08
+  Return: +2.16%
+  Trades: 1
+
+--- Fold 2 ---
+Test: 2022-01-09 to 2022-04-08
+  Return: +8.16%
+  Trades: 1
+
+--- Fold 3 ---
+Test: 2022-04-09 to 2022-07-07
+  Return: -10.52%
+  Trades: 1
+
+--- Fold 4 ---
+Test: 2022-07-08 to 2022-10-05
+  Return: -1.99%
+  Trades: 1
+
+--- Fold 5 ---
+Test: 2022-10-06 to 2023-01-03
+  Return: +8.05%
+  Trades: 1
+
+--- Fold 6 ---
+Test: 2023-01-04 to 2023-04-03
+  Return: +7.26%
+  Trades: 1
+
+--- Fold 7 ---
+Test: 2023-04-04 to 2023-07-02
+  Return: -6.27%
+  Trades: 1
+
+--- Fold 8 ---
+Test: 2023-07-03 to 2023-09-30
+  Return: -1.43%
+  Trades: 1
+
+--- Fold 9 ---
+Test: 2023-10-01 to 2023-12-29
+  Return: +9.10%
+  Trades: 1
+
+--- Fold 10 ---
+Test: 2023-12-30 to 2024-03-28
+  Return: +9.16%
+  Trades: 1
+
+--- Fold 11 ---
+Test: 2024-03-29 to 2024-06-26
+  Return: +3.33%
+  Trades: 1
+
+--- Fold 12 ---
+Test: 2024-06-27 to 2024-09-24
+  Return: +15.05%
+  Trades: 1
+
+--- Fold 13 ---
+Test: 2024-09-25 to 2024-12-23
+  Return: -1.29%
+  Trades: 1
+
+--- Fold 14 ---
+Test: 2024-12-24 to 2025-03-23
+  Return: +16.17%
+  Trades: 1
+
+--- Fold 15 ---
+Test: 2025-03-24 to 2025-06-21
+  Return: +12.60%
+  Trades: 1
+
+--- Fold 16 ---
+Test: 2025-06-22 to 2025-09-19
+  Return: +8.37%
+  Trades: 1
+
+================================================================================
+WALK-FORWARD SUMMARY
+================================================================================
+Total folds: 16
+Average return: 4.87%
+Median return: 7.66%
+Std dev: 7.58%
+Positive periods: 11/16 (69%)
+Best fold: 16.17%
+Worst fold: -10.52%
+
+✅ Saved to results/top20_walk_forward.csv
+
+================================================================================
+MONTE CARLO SIMULATION (1000 runs)
+================================================================================
+Running full backtest...
+Base return: 579.54%
+Total trades: 240
+Resampling 120 closed trades per simulation...
+  Completed 200/1000 simulations
+  Completed 400/1000 simulations
+  Completed 600/1000 simulations
+  Completed 800/1000 simulations
+  Completed 1000/1000 simulations
+
+================================================================================
+MONTE CARLO RESULTS
+================================================================================
+Mean return: 585.85%
+Median return: 580.32%
+Std deviation: 220.71%
+90% Confidence Interval: [236.66%, 959.83%]
+Probability of profit: 99.8%
+Best case: 1451.70%
+Worst case: -63.35%
+
+📊 Risk Assessment:
+  ✅ EXCELLENT - Very high probability of profit
+
+✅ Saved to results/top20_monte_carlo.csv
+
+================================================================================
+VALIDATION COMPLETE - TOP 20 REBALANCED
+================================================================================
+
+✅ Walk-Forward:
+   Average return: 4.87%
+   Consistency: 11/16 periods positive
+
+✅ Monte Carlo:
+   Expected return: 585.85%
+   Probability of profit: 99.8%
+   90% CI: [236.66%, 959.83%]

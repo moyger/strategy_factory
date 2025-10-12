@@ -1,0 +1,241 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║   TEMIZ STRATEGY - 2024-2025 MARKET TEST                    ║
+╚══════════════════════════════════════════════════════════════╝
+
+Testing on 50+ recent parabolic moves from current market.
+Hypothesis: Strategy may work better in current conditions vs 2021 meme mania.
+
+Running backtest...
+
+✅ Alpaca data loader initialized (PAPER mode)
+
+📊 Testing 56 recent parabolic days from 2024...
+============================================================
+
+📈 GME on 2024-05-13 (352 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.74R | $-288
+
+📈 GME on 2024-05-14 (359 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.74R | $-288
+
+📈 GME on 2024-05-15 (367 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.74R | $-288
+
+📈 GME on 2024-06-06 (380 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.75R | $-308
+
+📈 GME on 2024-06-07 (363 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.75R | $-308
+
+📈 GME on 2024-06-10 (391 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.75R | $-308
+
+📈 GME on 2024-06-13 (388 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.40R | $-133
+
+📈 AMC on 2024-05-14 (355 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.76R | $-326
+
+📈 AMC on 2024-05-15 (383 bars)
+   🔴 Trade: BACKSIDE → EOD | +0.28R | $+137
+
+📈 AMC on 2024-06-06 (322 bars)
+   🔴 Trade: BACKSIDE → EOD | +0.28R | $+137
+
+📈 DJT on 2024-03-26 (382 bars)
+   🔴 Trade: BACKSIDE → EOD | +0.28R | $+137
+
+📈 DJT on 2024-03-27 (379 bars)
+   🔴 Trade: BACKSIDE → EOD | +0.23R | $+114
+
+📈 DJT on 2024-04-01 (302 bars)
+   🔴 Trade: BACKSIDE → VWAP | +1.07R | $+180
+
+📈 DJT on 2024-10-29 (371 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.72R | $-252
+
+📈 DJT on 2024-11-06 (379 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 NVDA on 2024-02-22 (386 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 NVDA on 2024-02-23 (367 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 NVDA on 2024-05-23 (375 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 NVDA on 2024-08-28 (391 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 NVDA on 2024-11-20 (391 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 SMCI on 2024-02-16 (282 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 SMCI on 2024-02-22 (314 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 SMCI on 2024-03-08 (272 bars)
+   🔴 Trade: BACKSIDE → EOD | +1.64R | $+808
+
+📈 SMCI on 2024-03-11 (276 bars)
+   🔴 Trade: BACKSIDE → EOD | -0.07R | $-33
+
+📈 RGTI on 2024-12-09 (391 bars)
+   🔴 Trade: BACKSIDE → EOD | +0.64R | $+317
+
+📈 RGTI on 2024-12-10 (388 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.91R | $-467
+
+📈 RGTI on 2024-12-11 (391 bars)
+   🔴 Trade: FIRST_RED_DAY → VWAP | +1.30R | $+214
+
+📈 QBTS on 2024-12-09 (391 bars)
+   🔴 Trade: BACKSIDE → VWAP | +0.54R | $+88
+
+📈 QBTS on 2024-12-10 (371 bars)
+   🔴 Trade: BACKSIDE → VWAP | +0.54R | $+88
+
+📈 IONQ on 2024-12-09 (367 bars)
+   🔴 Trade: BACKSIDE → VWAP | +0.54R | $+88
+
+📈 IONQ on 2024-12-10 (376 bars)
+   🔴 Trade: BACKSIDE → VWAP | +0.54R | $+88
+   ⚠️  No data for RDDT on 2024-03-21
+
+📈 RDDT on 2024-03-22 (336 bars)
+   🔴 Trade: BACKSIDE → VWAP | +0.54R | $+88
+
+📈 RDDT on 2024-03-25 (291 bars)
+   🔴 Trade: BACKSIDE → VWAP | +0.54R | $+88
+
+📈 MARA on 2024-02-28 (390 bars)
+   🔴 Trade: BACKSIDE → VWAP | +0.54R | $+88
+
+📈 MARA on 2024-03-04 (383 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 MARA on 2024-10-29 (387 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 MARA on 2024-11-11 (391 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 RIOT on 2024-02-28 (341 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 RIOT on 2024-03-04 (330 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 RIOT on 2024-10-29 (340 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 MSTR on 2024-02-13 (164 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 MSTR on 2024-11-11 (388 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.92R | $-468
+
+📈 MSTR on 2024-11-18 (354 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.84R | $-414
+
+📈 MSTR on 2024-11-21 (386 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.69R | $-219
+
+📈 PLTR on 2024-02-05 (388 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.69R | $-219
+
+📈 PLTR on 2024-05-06 (386 bars)
+   🔴 Trade: FIRST_RED_DAY → STOP | -0.69R | $-219
+
+📈 PLTR on 2024-11-11 (391 bars)
+   🔴 Trade: FIRST_RED_DAY → EOD | +0.00R | $+0
+
+📈 TSLA on 2024-01-25 (391 bars)
+   🔴 Trade: FIRST_RED_DAY → EOD | +0.00R | $+0
+
+📈 TSLA on 2024-07-11 (361 bars)
+   🔴 Trade: FIRST_RED_DAY → EOD | +0.00R | $+0
+
+📈 TSLA on 2024-10-24 (391 bars)
+   🔴 Trade: FIRST_RED_DAY → EOD | +0.00R | $+0
+
+📈 TSLA on 2024-11-06 (391 bars)
+   🔴 Trade: FIRST_RED_DAY → EOD | +0.00R | $+0
+
+📈 TSLA on 2024-11-11 (391 bars)
+   🔴 Trade: FIRST_RED_DAY → EOD | +0.00R | $+0
+
+📈 FFIE on 2024-05-28 (384 bars)
+   🔴 Trade: BACKSIDE → EOD | -0.29R | $-174
+
+📈 MULN on 2024-05-15 (251 bars)
+   🔴 Trade: BACKSIDE → EOD | -0.29R | $-174
+
+📈 KULR on 2024-12-02 (391 bars)
+   🔴 Trade: BACKSIDE → STOP | -0.94R | $-482
+
+============================================================
+Download Summary:
+   Attempted: 56
+   Successful: 55
+   Failed: 1
+============================================================
+
+============================================================
+BACKTEST RESULTS
+============================================================
+
+📈 Performance:
+   Initial Capital: $100,000
+   Ending Equity: $99,427
+   Total Return: -0.57%
+   Net P&L: $-573
+
+📊 Trade Statistics:
+   Total Trades: 28
+   Winning Trades: 10 (35.7%)
+   Losing Trades: 18
+   Average Win: $209
+   Average Loss: $-292
+   Average R: -0.15R
+   Profit Factor: 0.40
+
+🎯 By Setup Type:
+   FIRST_RED_DAY:
+      Trades: 13 | WR: 23.1% | Avg R: -0.32R | P&L: $-2,318
+   BACKSIDE:
+      Trades: 15 | WR: 46.7% | Avg R: -0.01R | P&L: $-851
+
+🎖️  By Conviction:
+   MEDIUM:
+      Trades: 13 | WR: 23.1% | Avg R: -0.32R | P&L: $-2,318
+   LOW:
+      Trades: 15 | WR: 46.7% | Avg R: -0.01R | P&L: $-851
+
+============================================================
+2024-2025 MARKET ANALYSIS
+============================================================
+
+📊 Results:
+   Trades: 28
+   Win Rate: 35.7%
+   Return: -0.57%
+
+📈 Comparison to 2021 Meme Era:
+   2021 (7 days): -1.08% return, 33% WR
+   2024 (50+ days): -0.57% return, 35.7% WR
+
+❌ STILL NOT PROFITABLE IN 2024
+   • Strategy doesn't work in current market
+   • Market conditions changed from 2021
+   • Consider abandoning or complete redesign
+
+💡 Insights:
+   • 2021 had Reddit-driven mania (GME, AMC)
+   • 2024 has AI hype, election pumps, quantum
+   • Different pump dynamics = different strategy needed

@@ -1,0 +1,194 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║   TEMIZ SMALL-CAP SHORT STRATEGY - BACKTEST VALIDATION      ║
+╚══════════════════════════════════════════════════════════════╝
+
+Testing on known parabolic movers (meme stock rallies):
+- GME (GameStop squeeze)
+- AMC (Theater chain rally)
+- TSLA (Tesla volatility)
+- SPRT (Support.com merger pump)
+
+Using DAILY data (free via yfinance) to simulate intraday patterns.
+For full 1-minute backtest, get Alpaca API keys (free).
+
+Starting backtest...
+
+
+============================================================
+Backtesting GME
+Period: 2021-01-01 to 2021-03-31
+============================================================
+Found 1 parabolic signals
+
+   📅 2021-02-26 → 2021-03-01
+   🔴 SHORT 279 @ $35.01 → $27.90
+   💰 P&L: $+1,982 (+3.98R) [R1]
+
+============================================================
+Backtesting GME
+Period: 2021-05-01 to 2021-08-31
+============================================================
+Found 1 parabolic signals
+
+   📅 2021-08-25 → 2021-08-26
+   🔴 SHORT 179 @ $55.62 → $51.37
+   💰 P&L: $+759 (+1.50R) [R1]
+
+============================================================
+Backtesting GME
+Period: 2024-05-01 to 2024-06-30
+============================================================
+Found 1 parabolic signals
+
+   📅 2024-06-07 → 2024-06-10
+   🔴 SHORT 214 @ $47.04 → $25.16
+   💰 P&L: $+4,680 (+9.12R) [R2]
+
+============================================================
+Backtesting AMC
+Period: 2021-05-01 to 2021-08-31
+============================================================
+Found 3 parabolic signals
+
+   📅 2021-05-28 → 2021-06-01
+   🔴 SHORT 29 @ $359.86 → $297.11
+   💰 P&L: $+1,819 (+3.42R) [R1]
+
+   📅 2021-06-03 → 2021-06-04
+   🔴 SHORT 15 @ $674.24 → $518.54
+   💰 P&L: $+2,335 (+4.53R) [R1]
+
+   📅 2021-08-25 → 2021-08-26
+   🔴 SHORT 23 @ $473.34 → $422.04
+   💰 P&L: $+1,180 (+2.12R) [R2]
+
+============================================================
+Backtesting AMC
+Period: 2024-05-01 to 2024-06-30
+============================================================
+Found 0 parabolic signals
+❌ No signals detected
+
+============================================================
+Backtesting TSLA
+Period: 2020-01-01 to 2020-02-28
+============================================================
+Found 1 parabolic signals
+
+   📅 2020-02-04 → 2020-02-05
+   🔴 SHORT 174 @ $63.31 → $54.30
+   💰 P&L: $+1,566 (+2.79R) [R2]
+
+============================================================
+Backtesting TSLA
+Period: 2021-10-01 to 2021-11-30
+============================================================
+Found 0 parabolic signals
+❌ No signals detected
+
+============================================================
+Backtesting NVDA
+Period: 2023-05-01 to 2023-07-31
+============================================================
+Found 0 parabolic signals
+❌ No signals detected
+
+============================================================
+Backtesting NVDA
+Period: 2024-01-01 to 2024-03-31
+============================================================
+Found 0 parabolic signals
+❌ No signals detected
+
+============================================================
+Backtesting MARA
+Period: 2021-01-01 to 2021-05-31
+============================================================
+Found 0 parabolic signals
+❌ No signals detected
+
+============================================================
+Backtesting RIOT
+Period: 2021-01-01 to 2021-05-31
+============================================================
+Found 1 parabolic signals
+
+   📅 2021-02-19 → 2021-02-22
+   🔴 SHORT 146 @ $76.26 → $65.86
+   💰 P&L: $+1,517 (+2.67R) [R2]
+
+============================================================
+Backtesting BBBY
+Period: 2022-08-01 to 2022-09-30
+============================================================
+Found 0 parabolic signals
+❌ No signals detected
+
+============================================================
+Backtesting NEGG
+Period: 2021-07-01 to 2021-08-31
+============================================================
+Found 1 parabolic signals
+
+   📅 2021-08-27 → 2021-08-30
+   🔴 SHORT 27 @ $415.91 → $370.71
+   💰 P&L: $+1,220 (+2.13R) [R1]
+
+============================================================
+TEMIZ STRATEGY BACKTEST RESULTS
+============================================================
+
+📈 Performance:
+   Initial Capital: $100,000
+   Ending Equity: $117,058
+   Total Return: +17.06%
+   Net P&L: $+17,058
+
+📊 Trade Statistics:
+   Total Trades: 9
+   Winners: 9 (100.0%)
+   Losers: 0
+   Average Win: $1,895
+   Average Loss: $0
+   Average R: 3.58R
+   Profit Factor: 0.00
+
+🎯 By Exit Reason:
+   R2: 4 trades | WR: 100.0% | P&L: $+8,942
+   R1: 5 trades | WR: 100.0% | P&L: $+8,115
+
+📈 By Symbol:
+   GME: 3 trades | WR: 100.0% | P&L: $+7,421
+   AMC: 3 trades | WR: 100.0% | P&L: $+5,334
+   TSLA: 1 trades | WR: 100.0% | P&L: $+1,566
+   RIOT: 1 trades | WR: 100.0% | P&L: $+1,517
+   NEGG: 1 trades | WR: 100.0% | P&L: $+1,220
+
+🏆 Best Trade:
+   GME on 2024-06-07: $+4,680 (+9.12R)
+
+💔 Worst Trade:
+   GME on 2021-08-25: $+759 (+1.50R)
+
+💾 Results saved to: results/temiz_backtest_trades.csv
+
+============================================================
+STRATEGY EVALUATION
+============================================================
+
+⚠️  STRATEGY SHOWS PROMISE
+   - Profitable: +17.06%
+   - Sample size: 9 trades
+   - Limited data (daily bars vs 1-minute ideal)
+
+   Important:
+   • This backtest uses DAILY data (coarse approximation)
+   • Real strategy uses 1-MINUTE bars (much more precise)
+   • Get Alpaca API keys for proper validation
+
+   Next steps:
+   1. Get Alpaca paper API keys (FREE at alpaca.markets)
+   2. Test with 1-minute intraday data
+   3. Add confluence filters (improve win rate)
+   4. Test on more parabolic stocks

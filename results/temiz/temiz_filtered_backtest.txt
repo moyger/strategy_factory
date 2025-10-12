@@ -1,0 +1,31 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║   TEMIZ STRATEGY - FILTERED 1-MINUTE BACKTEST               ║
+╚══════════════════════════════════════════════════════════════╝
+
+This version includes confluence filters:
+✅ News sentiment check (avoid news-driven pumps)
+✅ Historical volatility analysis (target repeat offenders)
+✅ Float rotation validation (confirm exhaustion)
+
+Expected improvement: 33% → 60%+ win rate
+
+Running backtest...
+
+✅ Alpaca data loader initialized (PAPER mode)
+Traceback (most recent call last):
+  File "/Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/test_temiz_1min_FILTERED.py", line 486, in <module>
+    main()
+    ~~~~^^
+  File "/Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/test_temiz_1min_FILTERED.py", line 358, in main
+    backtester = FilteredTemizBacktester(
+        initial_capital=100000,
+    ...<2 lines>...
+        alpaca_secret_key=secret_key
+    )
+  File "/Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/test_temiz_1min_FILTERED.py", line 42, in __init__
+    self.filters = ConfluenceFilters(alpaca_api_key, alpaca_secret_key)
+                   ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/indicators/confluence_filters.py", line 44, in __init__
+    from alpaca.data import NewsClient
+ModuleNotFoundError: No module named 'alpaca'

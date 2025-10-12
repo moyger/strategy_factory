@@ -1,0 +1,28 @@
+Metric,Value
+Starting Capital,"$5,000"
+Final Value,"$19,870.16"
+Total Return,297.40%
+CAGR,27.08%
+Sharpe Ratio,1.24
+Sortino Ratio,1.87
+Max Drawdown,-22.19%
+Calmar Ratio,1.22
+Volatility (Annual),21.14%
+Win Rate,54.83%
+Best Day,7.98%
+Worst Day,-7.75%
+Avg Daily Return,0.1040%
+Positive Days,727
+Negative Days,599
+SPY Total Return,118.71%
+SPY CAGR,14.56%
+Outperformance vs SPY,+178.69%
+Beta to SPY,0.38
+Correlation to SPY,0.38
+Information Ratio,0.03
+,
+=== PROFESSIONAL STANDARDS ===,
+Sharpe >= 1.6,❌ FAIL
+Sortino >= 2.2,❌ FAIL
+Max DD <= 22%,❌ FAIL
+Calmar >= 1.2,✅ PASS

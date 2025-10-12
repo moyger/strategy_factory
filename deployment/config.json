@@ -1,0 +1,20 @@
+{
+  "ibkr": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 7496,
+    "client_id": 1
+  },
+  "bybit": {
+    "enabled": false,
+    "api_key": "YOUR_BYBIT_API_KEY",
+    "api_secret": "YOUR_BYBIT_SECRET",
+    "testnet": true
+  },
+  "mt5": {
+    "enabled": false,
+    "login": 12345678,
+    "password": "YOUR_MT5_PASSWORD",
+    "server": "MetaQuotes-Demo"
+  }
+}

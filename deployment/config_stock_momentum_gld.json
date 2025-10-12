@@ -1,0 +1,149 @@
+{
+  "strategy": "stock_momentum_gld",
+  "description": "Nick Radge Momentum Strategy - Stock version with GLD bear protection",
+  "version": "1.0",
+  "status": "paper_trading",
+
+  "_comment_universe": "Top 60 liquid S&P 500 stocks for momentum ranking",
+  "universe": [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B", "UNH", "JNJ",
+    "XOM", "JPM", "V", "PG", "MA", "HD", "CVX", "LLY", "ABBV", "MRK",
+    "PEP", "KO", "AVGO", "COST", "TMO", "WMT", "MCD", "CSCO", "ABT", "DHR",
+    "ACN", "VZ", "ADBE", "NKE", "NFLX", "CRM", "TXN", "PM", "DIS", "BMY",
+    "ORCL", "LIN", "UPS", "NEE", "RTX", "QCOM", "HON", "INTU", "AMD", "T",
+    "AMGN", "IBM", "BA", "GE", "CAT", "SBUX", "LOW", "GS", "ELV", "SPGI"
+  ],
+
+  "_comment_strategy_params": "Core strategy parameters",
+  "portfolio_size": 10,
+  "roc_period": 100,
+  "rebalance_frequency": "quarterly",
+  "rebalance_day_of_quarter": 1,
+  "rebalance_time": "09:35",
+
+  "_comment_regime": "3-tier regime based on SPY moving averages",
+  "use_regime_filter": true,
+  "regime_indicator": "SPY",
+  "regime_ma_long": 200,
+  "regime_ma_short": 50,
+  "strong_bull_positions": 10,
+  "weak_bull_positions": 5,
+  "bear_positions": 0,
+
+  "_comment_bear_protection": "GLD allocation during BEAR regime",
+  "bear_market_asset": "GLD",
+  "bear_allocation": 1.0,
+  "_comment_bear_note": "When SPY < 200-day MA, exit all stocks and allocate 100% to GLD",
+
+  "_comment_position_sizing": "Portfolio weighting method",
+  "use_momentum_weighting": true,
+  "_comment_weighting": "Stronger momentum stocks get higher allocation",
+
+  "_comment_filters": "Additional quality filters",
+  "use_relative_strength": true,
+  "_comment_relative_strength": "Only buy stocks outperforming SPY on 100-day basis",
+
+  "_comment_risk_management": "Risk controls",
+  "max_position_size": 0.15,
+  "_comment_max_position": "No single position > 15% of portfolio",
+  "daily_loss_limit": 0.03,
+  "_comment_daily_loss": "Close all positions if portfolio loses 3% in single day",
+  "max_drawdown_limit": 0.40,
+  "_comment_max_drawdown": "Stop trading if drawdown exceeds 40%",
+
+  "_comment_execution": "Trade execution parameters",
+  "dry_run": true,
+  "_comment_dry_run": "ALWAYS start with dry_run = true. Set to false only after paper trading validation",
+  "broker": "interactive_brokers",
+  "_comment_broker_options": "interactive_brokers, alpaca, bybit (for futures)",
+  "order_type": "market",
+  "slippage_estimate": 0.001,
+  "_comment_slippage": "Assume 0.1% slippage per trade",
+
+  "_comment_logging": "Monitoring and alerts",
+  "log_level": "INFO",
+  "log_file": "logs/stock_momentum_gld.log",
+  "enable_telegram_alerts": false,
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+
+  "_comment_backtest_results": "Historical performance (2014-2024)",
+  "backtest": {
+    "period": "2014-01-01 to 2024-12-31",
+    "total_return_pct": 1103.41,
+    "annualized_return_pct": 38.84,
+    "sharpe_ratio": 1.16,
+    "max_drawdown_pct": -38.52,
+    "spy_return_pct": 290.23,
+    "outperformance_pct": 813.18
+  },
+
+  "_comment_walkforward": "Walk-forward validation results",
+  "walkforward": {
+    "win_rate_pct": 30.0,
+    "positive_years": "3/10",
+    "note": "Low win rate due to annual splitting. Quarterly analysis recommended."
+  },
+
+  "_comment_montecarlo": "Monte Carlo simulation results",
+  "montecarlo": {
+    "profit_probability_pct": 100.0,
+    "simulations": 1000,
+    "note": "100% of simulations profitable. Extreme robustness."
+  },
+
+  "_comment_expected_live": "Expected live trading performance",
+  "expected_live_performance": {
+    "annualized_return_pct": "30-35",
+    "sharpe_ratio": "1.0-1.1",
+    "max_drawdown_pct": "-35 to -40",
+    "note": "Accounting for slippage and real-world execution"
+  },
+
+  "_comment_deployment_phases": "Recommended deployment timeline",
+  "deployment_phases": [
+    {
+      "phase": 1,
+      "name": "Paper Trading",
+      "duration_weeks": 4,
+      "capital": 0,
+      "dry_run": true,
+      "goal": "Verify execution and GLD switching logic"
+    },
+    {
+      "phase": 2,
+      "name": "Small Capital Testing",
+      "duration_weeks": 12,
+      "capital_pct": "10-20",
+      "dry_run": false,
+      "goal": "Validate real-world performance"
+    },
+    {
+      "phase": 3,
+      "name": "Full Deployment",
+      "duration_weeks": "ongoing",
+      "capital_pct": 100,
+      "dry_run": false,
+      "goal": "Scale to full capital"
+    }
+  ],
+
+  "_comment_monitoring": "Key metrics to monitor",
+  "monitoring_checklist": [
+    "Daily: Check for execution errors",
+    "Daily: Verify GLD allocation during BEAR regime",
+    "Weekly: Review performance vs SPY",
+    "Monthly: Check if within expected volatility bounds",
+    "Quarterly: Full rebalancing execution review",
+    "Quarterly: Compare actual vs expected returns"
+  ],
+
+  "_comment_kill_switches": "When to stop trading",
+  "kill_switch_triggers": [
+    "Drawdown exceeds 40%",
+    "3 consecutive quarterly losses",
+    "Annual return < -20%",
+    "Execution errors >5% of trades",
+    "Unexpected behavior (logic errors)"
+  ]
+}

@@ -1,0 +1,88 @@
+================================================================================
+REBALANCING FREQUENCY COMPARISON TEST
+================================================================================
+
+Testing: Weekly, Monthly, Quarterly, Annual
+Goal: Find optimal balance between adaptation and over-trading
+
+📥 Downloading 21 crypto pairs...
+   ✅ Downloaded 21 pairs, 1827 days
+
+================================================================================
+TESTING: WEEKLY REBALANCING
+================================================================================
+   Rebalancing on 261 dates
+
+📊 Results:
+   Final Equity: $148,488
+   Gross Return: +48.49%
+   Est. Fees: $29
+   Net Return: +48.46%
+   Trades: 29
+   Rebalances: 28
+
+================================================================================
+TESTING: MONTHLY REBALANCING
+================================================================================
+   Rebalancing on 61 dates
+
+📊 Results:
+   Final Equity: $148,488
+   Gross Return: +48.49%
+   Est. Fees: $29
+   Net Return: +48.46%
+   Trades: 29
+   Rebalances: 6
+
+================================================================================
+TESTING: QUARTERLY REBALANCING
+================================================================================
+   Rebalancing on 21 dates
+
+📊 Results:
+   Final Equity: $148,488
+   Gross Return: +48.49%
+   Est. Fees: $29
+   Net Return: +48.46%
+   Trades: 29
+   Rebalances: 2
+
+================================================================================
+TESTING: ANNUAL REBALANCING
+================================================================================
+   Rebalancing on 5 dates
+
+📊 Results:
+   Final Equity: $148,488
+   Gross Return: +48.49%
+   Est. Fees: $29
+   Net Return: +48.46%
+   Trades: 29
+   Rebalances: 0
+
+================================================================================
+COMPARISON SUMMARY
+================================================================================
+
+Frequency       Gross Return     Est Fees      Net Return     Trades   Rebalances
+--------------------------------------------------------------------------------
+weekly                48.49% $         29          48.46%         29           28
+monthly               48.49% $         29          48.46%         29            6
+quarterly             48.49% $         29          48.46%         29            2
+annual                48.49% $         29          48.46%         29            0
+--------------------------------------------------------------------------------
+
+🏆 WINNER: WEEKLY REBALANCING
+   Net Return: 48.46%
+   Rebalances: 28
+   Trades: 29
+
+💡 ANALYSIS:
+   Weekly rebalancing captured the most opportunities
+   But watch out for high fees and whipsaw
+
+✅ Results saved to: /Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/results/crypto/rebalance_frequency_comparison.csv
+
+================================================================================
+TEST COMPLETE
+================================================================================

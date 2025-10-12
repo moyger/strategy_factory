@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/examples/test_institutional_crypto_perp.py", line 30, in <module>
+    from strategies.institutional_crypto_perp_strategy import (
+        InstitutionalCryptoPerp, MarketRegime, Position, RiskMetrics
+    )
+ModuleNotFoundError: No module named 'strategies.institutional_crypto_perp_strategy'

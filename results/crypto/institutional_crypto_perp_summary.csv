@@ -1,0 +1,2 @@
+Strategy,Period,Initial_Capital,Final_Value,Total_Return_Pct,Sharpe_Ratio,Max_Drawdown_Pct,Num_Trades,Win_Rate_Pct,Profit_Factor,Entry_Signals,Exit_Signals,Bull_Days_Pct,Bear_Days_Pct
+Institutional Crypto Perp (Donchian Breakout),2020-01-01 to 2024-12-30,100000,161589.754177266,61.589754177266,1.3925733840852073,-4.601875479850415,204,61.111111111111114,8.518783394603494,1023,13770,26.506024096385545,44.687842278203725

@@ -1,0 +1,105 @@
+================================================================================
+FULL BACKTEST: INSTITUTIONAL CRYPTO PERP WITH PAXG
+================================================================================
+
+📋 This backtest includes ALL 4 MANDATORY components:
+   1. Performance Backtest (crypto trading + PAXG)
+   2. QuantStats Report
+   3. Walk-Forward Validation
+   4. Monte Carlo Simulation
+
+================================================================================
+
+📥 Downloading 11 crypto pairs...
+   ✅ Successfully downloaded 11 pairs
+   📊 Data points: 732 days
+
+🚀 Running institutional crypto perp backtest...
+   📈 Calculating market regime...
+   📅 2023-10-10 (0/732): Equity=$100,000, Positions=0 crypto
+   📅 2024-01-18 (100/732): Equity=$107,521, Positions=PAXG
+   📅 2024-04-27 (200/732): Equity=$125,763, Positions=0 crypto
+   📅 2024-08-05 (300/732): Equity=$126,585, Positions=PAXG
+   📅 2024-11-13 (400/732): Equity=$143,089, Positions=4 crypto
+   📅 2025-02-21 (500/732): Equity=$178,764, Positions=0 crypto
+   📅 2025-06-01 (600/732): Equity=$201,350, Positions=0 crypto
+   📅 2025-09-09 (700/732): Equity=$201,350, Positions=0 crypto
+
+================================================================================
+COMPONENT 1: PERFORMANCE BACKTEST RESULTS
+================================================================================
+
+💰 P&L:
+   Initial Capital: $100,000.00
+   Final Equity: $201,814.19
+   Total Return: +101.81%
+   Total P&L: $+101,814.19
+
+📊 Trades:
+   Total Trades: 41
+   Crypto Trades: 30
+   PAXG Trades: 11
+   Win Rate: 75.6%
+   Avg Win: $3,489.74
+   Avg Loss: $-636.79
+
+📈 Regime Performance:
+   BULL_RISK_ON        :  101 days,  52 trades, P&L=$+43,966.69
+   NEUTRAL             :  324 days,   5 trades, P&L=$+1,645.37
+   BEAR_RISK_OFF       :  307 days,  14 trades, P&L=$+56,202.14
+
+================================================================================
+COMPONENT 2: QUANTSTATS REPORT
+================================================================================
+
+Generating QuantStats report...
+✅ Report saved to: /Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/results/crypto/institutional_perp_full_report.html
+
+📊 KEY METRICS:
+   Total Return: 101.81%
+   CAGR: 27.35%
+   Sharpe Ratio: 2.22
+   Max Drawdown: -6.52%
+   Calmar Ratio: 4.20
+
+================================================================================
+COMPONENT 3: WALK-FORWARD VALIDATION
+================================================================================
+
+❌ No valid folds - data too short
+
+================================================================================
+COMPONENT 4: MONTE CARLO SIMULATION
+================================================================================
+
+Trade Statistics:
+   Total Trades: 41
+   Winning Trades: 31 (75.6%)
+   Average Win: $3,489.74
+   Average Loss: $-636.79
+
+Running 1000 Monte Carlo simulations...
+
+🎲 MONTE CARLO RESULTS:
+   Simulations: 1000
+   Probability of Profit: 100.0%
+   Expected Return: 101.17%
+   Median Return: 99.95%
+   5th Percentile: 52.22%
+   95th Percentile: 153.58%
+   Expected Max DD: -1.76%
+   Worst Case DD: -6.34%
+   ✅ Risk Assessment: EXCELLENT
+
+✅ Monte Carlo results saved to: /Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/results/crypto/institutional_perp_montecarlo.csv
+
+================================================================================
+✅ FULL BACKTEST COMPLETE
+================================================================================
+
+📁 Results saved to:
+   - /Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/results/crypto/institutional_perp_full_report.html
+   - results/crypto/institutional_perp_walkforward.csv
+   - results/crypto/institutional_perp_montecarlo.csv
+
+🚀 Strategy is ready for deployment if all components show positive results.

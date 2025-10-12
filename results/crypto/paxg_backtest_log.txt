@@ -1,0 +1,74 @@
+================================================================================
+INSTITUTIONAL CRYPTO PERP WITH PAXG - FULL BACKTEST
+================================================================================
+
+📥 Downloading 4 crypto pairs...
+   ✅ Downloaded 4 pairs, 732 days
+
+🚀 Running backtest...
+   💰 2023-10-10: Entered PAXG @ $1863.34
+   📅 2023-11-29: Equity=$108,527, Positions=0
+   📅 2024-01-18: Equity=$107,521, Positions=0
+   📅 2024-03-08: Equity=$114,488, Positions=0
+   💰 2024-04-26: Exited PAXG with PnL=$25,763.21
+   📅 2024-04-27: Equity=$125,763, Positions=0
+   📅 2024-06-16: Equity=$125,763, Positions=0
+   💰 2024-07-04: Entered PAXG @ $2326.45
+   💰 2024-07-13: Exited PAXG with PnL=$3,348.60
+   💰 2024-08-03: Entered PAXG @ $2465.74
+   📅 2024-08-05: Equity=$126,630, Positions=0
+   💰 2024-08-23: Exited PAXG with PnL=$2,301.93
+   💰 2024-08-26: Entered PAXG @ $2507.93
+   📅 2024-09-24: Equity=$136,051, Positions=0
+   💰 2024-09-24: Exited PAXG with PnL=$7,500.15
+   💰 2024-09-25: Entered PAXG @ $2652.17
+   💰 2024-09-26: Exited PAXG with PnL=$514.02
+   💰 2024-09-30: Entered PAXG @ $2635.93
+   💰 2024-10-14: Exited PAXG with PnL=$1,269.32
+   📅 2024-11-13: Equity=$140,455, Positions=1
+   📅 2025-01-02: Equity=$141,558, Positions=0
+   📅 2025-02-21: Equity=$141,558, Positions=0
+   💰 2025-03-09: Entered PAXG @ $2932.91
+   💰 2025-03-12: Exited PAXG with PnL=$622.55
+   💰 2025-03-13: Entered PAXG @ $3002.57
+   💰 2025-03-14: Exited PAXG with PnL=$-357.82
+   💰 2025-03-16: Entered PAXG @ $3001.40
+   💰 2025-03-19: Exited PAXG with PnL=$3,028.77
+   💰 2025-03-20: Entered PAXG @ $3055.90
+   💰 2025-03-23: Exited PAXG with PnL=$-137.04
+   💰 2025-03-28: Entered PAXG @ $3091.34
+   📅 2025-04-12: Equity=$152,721, Positions=0
+   💰 2025-04-22: Exited PAXG with PnL=$12,080.93
+   📅 2025-06-01: Equity=$160,110, Positions=1
+   📅 2025-07-21: Equity=$159,406, Positions=0
+   📅 2025-09-09: Equity=$159,406, Positions=0
+
+================================================================================
+BACKTEST RESULTS
+================================================================================
+
+💰 P&L:
+   Initial Capital: $100,000.00
+   Final Equity: $159,234.01
+   Total Return: +59.23%
+
+📊 Trades:
+   Total: 25
+   Win Rate: 52.0%
+   Avg Win: $4,832.34
+   Avg Loss: $-717.28
+
+================================================================================
+GENERATING QUANTSTATS REPORT
+================================================================================
+✅ Report saved to: /Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/results/crypto/paxg_full_backtest_report.html
+
+📊 KEY METRICS:
+   Total Return: 59.23%
+   CAGR: 17.37%
+   Sharpe: 1.66
+   Max Drawdown: -6.49%
+
+================================================================================
+✅ BACKTEST COMPLETE
+================================================================================

@@ -1,0 +1,6 @@
+Test,Passed
+Buy-and-Hold BTC,True
+SMA Crossover Signals,True
+Quarterly Rebalancing,False
+Strategy Generator,True
+Zero Trades Edge Case,True

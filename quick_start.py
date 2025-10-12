@@ -137,43 +137,48 @@ elif 'RSI' in str(top_strategy['params']):
     )
     print(f"\n✅ Optimized RSI: {opt_result.best_params}")
     print(f"   Sharpe: {opt_result.best_fitness:.2f}")
+else:
+    print(f"   ⚠️  No optimizer available for {top_strategy['params']}")
+    opt_result = None
 
 # ==========================================
 # 5. WALK-FORWARD VALIDATION
 # ==========================================
-print("\n🚶 Step 5: Walk-forward validation...")
+if opt_result is not None:
+    print("\n🚶 Step 5: Walk-forward validation...")
 
-wf_results = optimizer.walk_forward_analysis(
-    df=df,
-    strategy_params=opt_result.best_params,
-    train_window=2000,
-    test_window=500,
-    step_size=300,
-    verbose=False
-)
+    wf_results = optimizer.walk_forward_analysis(
+        df=df,
+        strategy_params=opt_result.best_params,
+        train_window=2000,
+        test_window=500,
+        step_size=300,
+        verbose=False
+    )
 
-print(f"✅ Completed {len(wf_results)} folds")
-print(f"   Avg test return: {wf_results['test_return'].mean():.2f}%")
-print(f"   Avg test Sharpe: {wf_results['test_sharpe'].mean():.2f}")
-print(f"   Consistency: {(wf_results['test_return'] > 0).sum() / len(wf_results) * 100:.0f}% positive folds")
+    print(f"✅ Completed {len(wf_results)} folds")
+    print(f"   Avg test return: {wf_results['test_return'].mean():.2f}%")
+    print(f"   Avg test Sharpe: {wf_results['test_sharpe'].mean():.2f}")
+    print(f"   Consistency: {(wf_results['test_return'] > 0).sum() / len(wf_results) * 100:.0f}% positive folds")
 
 # ==========================================
 # 6. MONTE CARLO SIMULATION
 # ==========================================
-print("\n🎲 Step 6: Monte Carlo simulation...")
+if opt_result is not None:
+    print("\n🎲 Step 6: Monte Carlo simulation...")
 
-mc_results = optimizer.monte_carlo_simulation(
-    df=df,
-    strategy_params=opt_result.best_params,
-    n_simulations=500,  # Reduced for quick start
-    confidence_level=0.95,
-    verbose=False
-)
+    mc_results = optimizer.monte_carlo_simulation(
+        df=df,
+        strategy_params=opt_result.best_params,
+        n_simulations=500,  # Reduced for quick start
+        confidence_level=0.95,
+        verbose=False
+    )
 
-print(f"✅ Completed 500 simulations")
-print(f"   Mean return: {mc_results['mean_return']:.2f}%")
-print(f"   95% CI: [{mc_results['lower_95']:.2f}%, {mc_results['upper_95']:.2f}%]")
-print(f"   Probability of profit: {mc_results['probability_positive']:.1f}%")
+    print(f"✅ Completed 500 simulations")
+    print(f"   Mean return: {mc_results['mean_return']:.2f}%")
+    print(f"   95% CI: [{mc_results['lower_95']:.2f}%, {mc_results['upper_95']:.2f}%]")
+    print(f"   Probability of profit: {mc_results['probability_positive']:.1f}%")
 
 # ==========================================
 # 7. SAVE RESULTS
@@ -183,19 +188,21 @@ print("\n💾 Step 7: Saving results...")
 # Save top strategies
 all_results.head(50).to_csv('results/top_50_strategies.csv', index=False)
 filtered.to_csv('results/filtered_strategies.csv', index=False)
-wf_results.to_csv('results/walk_forward_results.csv', index=False)
 
-# Save optimized strategy
-optimized = pd.DataFrame([{
-    'strategy_type': opt_result.best_params['type'],
-    'parameters': str(opt_result.best_params),
-    'sharpe_ratio': opt_result.best_fitness,
-    'wf_avg_return': wf_results['test_return'].mean(),
-    'wf_avg_sharpe': wf_results['test_sharpe'].mean(),
-    'mc_mean_return': mc_results['mean_return'],
-    'mc_prob_positive': mc_results['probability_positive']
-}])
-optimized.to_csv('results/optimized_strategy.csv', index=False)
+if opt_result is not None and 'wf_results' in locals():
+    wf_results.to_csv('results/walk_forward_results.csv', index=False)
+
+    # Save optimized strategy
+    optimized = pd.DataFrame([{
+        'strategy_type': opt_result.best_params.get('type', 'Unknown'),
+        'parameters': str(opt_result.best_params),
+        'sharpe_ratio': opt_result.best_fitness,
+        'wf_avg_return': wf_results['test_return'].mean(),
+        'wf_avg_sharpe': wf_results['test_sharpe'].mean(),
+        'mc_mean_return': mc_results['mean_return'] if 'mc_results' in locals() else None,
+        'mc_prob_positive': mc_results['probability_positive'] if 'mc_results' in locals() else None
+    }])
+    optimized.to_csv('results/optimized_strategy.csv', index=False)
 
 print("✅ Results saved:")
 print("   - results/top_50_strategies.csv")
@@ -212,10 +219,13 @@ print("=" * 80)
 print(f"\n📊 Summary:")
 print(f"   Total strategies tested: {len(all_results):,}")
 print(f"   Strategies passed filters: {len(filtered)}")
-print(f"   Best strategy: {opt_result.best_params}")
-print(f"   Optimized Sharpe: {opt_result.best_fitness:.2f}")
-print(f"   Walk-forward validated: {len(wf_results)} folds")
-print(f"   Monte Carlo probability of profit: {mc_results['probability_positive']:.1f}%")
+if opt_result is not None:
+    print(f"   Best strategy: {opt_result.best_params}")
+    print(f"   Optimized Sharpe: {opt_result.best_fitness:.2f}")
+if 'wf_results' in locals():
+    print(f"   Walk-forward validated: {len(wf_results)} folds")
+if 'mc_results' in locals():
+    print(f"   Monte Carlo probability of profit: {mc_results['probability_positive']:.1f}%")
 
 print(f"\n🚀 Next Steps:")
 print(f"   1. Review results in results/ folder")

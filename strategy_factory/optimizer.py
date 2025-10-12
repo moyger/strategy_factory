@@ -93,8 +93,11 @@ class StrategyOptimizer:
                 fees=self.commission
             )
 
-            # Fitness = Sharpe ratio
-            sharpe = portfolio.sharpe_ratio() if portfolio.sharpe_ratio() is not None else 0
+            # Fitness = Sharpe ratio (annualize for 5min data: 252*12*24 periods/year)
+            try:
+                sharpe = portfolio.sharpe_ratio(freq='5min')
+            except:
+                sharpe = 0
             return (sharpe,)
 
         # Run optimization
@@ -154,7 +157,10 @@ class StrategyOptimizer:
                 fees=self.commission
             )
 
-            sharpe = portfolio.sharpe_ratio() if portfolio.sharpe_ratio() is not None else 0
+            try:
+                sharpe = portfolio.sharpe_ratio(freq='5min')
+            except:
+                sharpe = 0
             return (sharpe,)
 
         result = self._run_genetic_optimization(
@@ -417,9 +423,14 @@ class StrategyOptimizer:
         if return_portfolio:
             return portfolio
 
+        try:
+            sharpe = portfolio.sharpe_ratio(freq='5min')
+        except:
+            sharpe = 0
+
         return {
             'total_return': portfolio.total_return() * 100,
-            'sharpe_ratio': portfolio.sharpe_ratio() if portfolio.sharpe_ratio() is not None else 0,
+            'sharpe_ratio': sharpe,
             'max_drawdown': portfolio.max_drawdown() * 100,
             'num_trades': portfolio.trades.count()
         }

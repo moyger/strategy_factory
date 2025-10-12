@@ -1,0 +1,2 @@
+strategy,period,initial_capital,final_equity,total_return_pct,annualized_return_pct,sharpe_ratio,max_drawdown_pct,spy_return_pct,outperformance_pct,walkforward_win_rate_pct,walkforward_avg_return_pct,montecarlo_profit_prob_pct,montecarlo_mean_return_pct,deployment_ready
+"Nick Radge Momentum (Top 10, GLD bear protection)",2014-01-02 to 2024-12-30,100000,1203413.8835239643,1103.4138835239644,38.841567773420024,1.1581883255729613,-38.51590573889112,290.2329865036544,813.18089702031,30.0,6.570225506161407,100.0,3.489002045002043e+46,False

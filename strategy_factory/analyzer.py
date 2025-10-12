@@ -122,8 +122,6 @@ class StrategyAnalyzer:
 
             # Drawdown
             'max_drawdown': qs.stats.max_drawdown(returns) * 100,
-            'avg_drawdown': qs.stats.avg_drawdown(returns) * 100,
-            'avg_drawdown_days': qs.stats.avg_drawdown_days(returns),
 
             # Win rate
             'win_rate': qs.stats.win_rate(returns) * 100,

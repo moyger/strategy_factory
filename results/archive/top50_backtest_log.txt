@@ -1,0 +1,81 @@
+================================================================================
+INSTITUTIONAL CRYPTO PERP - TOP 50 WITH ANNUAL REBALANCING
+================================================================================
+
+Full period: 2020-10-11 to 2025-10-10
+
+📥 Downloading data for each year's top 50...
+
+  2020: 50 cryptos
+   Downloading 50 symbols...
+      ✅ Successfully downloaded 50/50 pairs
+
+  2021: 50 cryptos
+   Downloading 50 symbols...
+      ✅ Successfully downloaded 50/50 pairs
+
+  2022: 50 cryptos
+   Downloading 50 symbols...
+      ✅ Successfully downloaded 50/50 pairs
+
+  2023: 50 cryptos
+   Downloading 50 symbols...
+      ✅ Successfully downloaded 50/50 pairs
+
+  2024: 50 cryptos
+   Downloading 50 symbols...
+      ✅ Successfully downloaded 50/50 pairs
+
+  2025: 50 cryptos
+   Downloading 50 symbols...
+      ✅ Successfully downloaded 50/50 pairs
+
+  Downloading BTC-USD (for regime)...
+   Downloading 1 symbols...
+      ✅ Successfully downloaded 1/1 pairs
+
+  Downloading PAXG-USD (for bear allocation)...
+   Downloading 1 symbols...
+      ✅ Successfully downloaded 1/1 pairs
+
+✅ Total unique cryptos across all years: 101
+
+🚀 Running backtest with annual rebalancing...
+  📅 2020-10-11: Rebalancing to 2020 universe...
+     Universe: 50 cryptos
+  📅 2021-01-01: Rebalancing to 2021 universe...
+     Universe: 50 cryptos
+  📅 2022-01-01: Rebalancing to 2022 universe...
+     Universe: 50 cryptos
+  📅 2023-01-01: Rebalancing to 2023 universe...
+     Universe: 50 cryptos
+  📅 2024-01-01: Rebalancing to 2024 universe...
+     Universe: 50 cryptos
+  📅 2025-01-01: Rebalancing to 2025 universe...
+     Universe: 50 cryptos
+
+================================================================================
+BACKTEST RESULTS - TOP 50 WITH REBALANCING
+================================================================================
+Initial Capital: $100,000
+Final Equity: $253,415
+Total Return: +153.42%
+Total Trades: 316
+Closed Trades: 158
+Win Rate: 44.3%
+Avg Win: $6,582
+Avg Loss: $-3,492
+
+Top 10 Performers:
+  WIF-USD: $+78,704
+  XRP-USD: $+39,091
+  PAXG: $+38,348
+  SAND-USD: $+36,749
+  SOL-USD: $+31,663
+  DOGE-USD: $+19,126
+  FET-USD: $+18,908
+  UNI-USD: $+17,982
+  AVAX-USD: $+12,638
+  BTC-USD: $+12,124
+
+✅ Saved to results/top50_rebalanced_trades.csv

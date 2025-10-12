@@ -9,6 +9,9 @@ __pycache__/
 .venv/
 venv/
 env/
+.*/venv310/
+venv310/
+.env
 
 # Generated output directories
 output/

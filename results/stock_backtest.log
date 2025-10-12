@@ -1,0 +1,49 @@
+================================================================================
+INSTITUTIONAL STOCK MOMENTUM BACKTEST
+================================================================================
+
+📥 Downloading S&P 500 stock data...
+✅ Downloaded 2767 days for 63 symbols
+   Date range: 2014-01-02 to 2024-12-30
+
+================================================================================
+TESTING WITH TLT (20-YEAR BONDS) AS BEAR ASSET
+================================================================================
+
+Strategy Configuration:
+- Portfolio Size: 10 stocks
+- Momentum Period: 100 days (ROC)
+- Rebalance: Quarterly
+- Regime Filter: SPY 200/50-day MAs
+- Bear Asset: TLT (100% allocation)
+- Strong Bull: 10 positions
+- Weak Bull: 5 positions
+- Bear: 0 positions (100% TLT)
+
+⚙️  Generating portfolio allocations...
+
+📊 Calculating indicators for 61 stocks...
+   Calculating market regime...
+
+   Market Regime Summary:
+   - STRONG_BULL: 1736 days (62.7%)
+   - BEAR: 737 days (26.6%)
+   - UNKNOWN: 172 days (6.2%)
+   - WEAK_BULL: 122 days (4.4%)
+
+   Quarterly rebalances: 42
+   First rebalance: 2014-07-01
+   Last rebalance: 2024-10-01
+✅ Allocations generated
+
+📊 Running backtest...
+
+================================================================================
+PERFORMANCE SUMMARY
+================================================================================
+Initial Capital:     $100,000.00
+Traceback (most recent call last):
+  File "/Users/karlomarceloestrada/Documents/@Projects/05_strategy_factory/examples/test_stock_simple.py", line 145, in <module>
+    print(f"Final Equity:        ${final_value:,.2f}")
+                                  ^^^^^^^^^^^^^^^^^^
+TypeError: unsupported format string passed to Series.__format__

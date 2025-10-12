@@ -1,0 +1,91 @@
+================================================================================
+INSTITUTIONAL CRYPTO PERP - TOP 20 WITH ANNUAL REBALANCING
+================================================================================
+
+================================================================================
+WALK-FORWARD ANALYSIS - TOP 20 WITH ANNUAL REBALANCING
+================================================================================
+Full period: 2020-10-11 to 2025-10-10
+
+📥 Downloading data for each year's top 20...
+
+  2020: 20 cryptos
+
+📥 Downloading 20 crypto pairs...
+   ✅ Downloaded 20 pairs, 1825 days
+
+  2021: 20 cryptos
+
+📥 Downloading 20 crypto pairs...
+   ✅ Downloaded 20 pairs, 1825 days
+
+  2022: 20 cryptos
+
+📥 Downloading 20 crypto pairs...
+   ✅ Downloaded 20 pairs, 1825 days
+
+  2023: 20 cryptos
+
+📥 Downloading 20 crypto pairs...
+   ✅ Downloaded 20 pairs, 1825 days
+
+  2024: 20 cryptos
+
+📥 Downloading 20 crypto pairs...
+   ✅ Downloaded 20 pairs, 1825 days
+
+  2025: 20 cryptos
+
+📥 Downloading 20 crypto pairs...
+   ✅ Downloaded 20 pairs, 1825 days
+
+  BTC-USD (for regime)...
+
+📥 Downloading 1 crypto pairs...
+   ✅ Downloaded 1 pairs, 1825 days
+
+  PAXG-USD (for bear allocation)...
+
+📥 Downloading 1 crypto pairs...
+   ✅ Downloaded 1 pairs, 1825 days
+
+✅ Total unique cryptos across all years: 37
+
+🚀 Running backtest with annual rebalancing...
+  📅 2020-10-11: Rebalancing to 2020 universe...
+     Universe: 20 cryptos
+  📅 2021-01-01: Rebalancing to 2021 universe...
+     Universe: 20 cryptos
+  📅 2022-01-01: Rebalancing to 2022 universe...
+     Universe: 20 cryptos
+  📅 2023-01-01: Rebalancing to 2023 universe...
+     Universe: 20 cryptos
+  📅 2024-01-01: Rebalancing to 2024 universe...
+     Universe: 20 cryptos
+  📅 2025-01-01: Rebalancing to 2025 universe...
+     Universe: 20 cryptos
+
+================================================================================
+BACKTEST RESULTS - TOP 20 WITH REBALANCING
+================================================================================
+Initial Capital: $100,000
+Final Equity: $679,722
+Total Return: +579.72%
+Total Trades: 240
+Closed Trades: 120
+Win Rate: 52.5%
+Avg Win: $14,747
+Avg Loss: $-6,129
+
+Top 5 Performers:
+  PAXG: $+105,436
+  FET-USD: $+98,517
+  XRP-USD: $+95,635
+  ARB-USD: $+91,007
+  UNI-USD: $+55,483
+
+✅ Saved to results/top20_rebalanced_trades.csv
+
+================================================================================
+VALIDATION COMPLETE
+================================================================================

@@ -16,35 +16,39 @@ A complete strategy generation, optimization, and analysis system that replaces:
 
 ## 📚 Documentation
 
+**NEW:** All documentation now organized in [docs/](docs/) folder. See [docs/README.md](docs/README.md) for complete index.
+
 ### Essential Reading
 1. **[GETTING_STARTED.md](GETTING_STARTED.md)** ⭐⭐⭐ START HERE
    - 5-minute quick start
    - Complete workflow examples
    - Troubleshooting guide
 
-2. **[MULTI_BROKER_DEPLOYMENT.md](MULTI_BROKER_DEPLOYMENT.md)** ⭐⭐
+2. **[Live Trading Guide](docs/deployment/LIVE_TRADING_GUIDE.md)** ⭐⭐⭐ Production deployment
+   - Nick Radge momentum strategy (+221% tested)
+   - Broker setup (IBKR, Bybit, MT5)
+   - Dry run testing
+
+3. **[Multi-Broker Deployment](docs/deployment/MULTI_BROKER_DEPLOYMENT.md)** ⭐⭐
    - Deploy to IBKR, Bybit, and MT5
    - Unified broker interface
    - Complete code examples
 
-3. **[LIBRARY_RECOMMENDATIONS.md](LIBRARY_RECOMMENDATIONS.md)** ⭐
+4. **[LIBRARY_RECOMMENDATIONS.md](LIBRARY_RECOMMENDATIONS.md)** ⭐
    - Best Python libraries reviewed
    - Comparison matrix
    - Quick start examples
 
+### Strategy-Specific Docs
+- **Nick Radge Momentum** (Production): [docs/nick_radge/](docs/nick_radge/)
+- **Deployment Guides**: [docs/deployment/](docs/deployment/)
+- **General Guides**: [docs/guides/](docs/guides/)
+- **Temiz Strategy** (⚠️ ABANDONED - 35% WR): [docs/temiz/](docs/temiz/)
+
 ### Advanced Topics
-4. **[QUANTANALYZER_ALTERNATIVES.md](QUANTANALYZER_ALTERNATIVES.md)**
-   - QuantAnalyzer replacement using QuantStats
-   - 50+ performance metrics
-   - Portfolio optimization
-
-5. **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)**
-   - Development roadmap
-   - Architecture decisions
-
-6. **[STRATEGYQUANT_SYSTEM.md](STRATEGYQUANT_SYSTEM.md)**
-   - System architecture
-   - How everything works together
+- **[QUANTANALYZER_ALTERNATIVES.md](QUANTANALYZER_ALTERNATIVES.md)** - Performance analysis
+- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Development roadmap
+- **[STRATEGYQUANT_SYSTEM.md](STRATEGYQUANT_SYSTEM.md)** - System architecture
 
 ---
 
@@ -75,7 +79,16 @@ Check `results/` folder for:
 - `optimized_strategy.csv` - Genetically optimized parameters
 - `walk_forward_results.csv` - Out-of-sample validation
 
-### Step 4: Explore Jupyter Notebooks
+### Step 4: Test Specific Strategies
+```bash
+# Test breakout strategies (ATR, Intraday)
+python examples/test_breakout_strategies.py
+
+# Test momentum strategies
+python examples/example_atr_breakout.py
+```
+
+### Step 5: Explore Jupyter Notebooks
 ```bash
 jupyter notebook
 ```
@@ -85,6 +98,46 @@ Open:
 - `notebooks/02_strategy_optimization.ipynb` - Optimization & validation
 
 **Full guide:** See [GETTING_STARTED.md](GETTING_STARTED.md)
+
+---
+
+## 📁 Project Structure
+
+```
+strategy_factory/           # Core framework modules
+├── generator.py           # Generate strategy combinations
+├── optimizer.py           # Genetic algorithms, walk-forward
+├── analyzer.py            # Performance analysis & reporting
+└── risk_management.py     # Position sizing, risk controls
+
+strategies/                 # Strategy implementations
+├── nick_radge_momentum_strategy.py     # Momentum + regime filter
+├── institutional_crypto_perp_strategy.py # Crypto perps with PAXG allocation
+├── temiz_small_cap_short_strategy.py   # Intraday small-cap shorts ⭐ NEW
+├── atr_breakout_strategy.py            # ATR breakout (long/short)
+├── intraday_breakout_strategy.py       # Intraday breakout (long only)
+├── multi_asset_portfolio_strategy.py   # Multi-asset allocation
+└── [other strategies...]
+
+examples/                   # Usage examples
+├── test_breakout_strategies.py         # Test breakout strategies
+└── example_atr_breakout.py             # ATR breakout examples
+
+deployment/                 # Live trading
+├── strategy_deployer.py   # Multi-broker deployment
+├── config_live.json       # Live configuration
+└── live_nick_radge.py     # Nick Radge live trader
+
+notebooks/                  # Interactive analysis
+├── 01_strategy_generation.ipynb
+└── 02_strategy_optimization.ipynb
+```
+
+**Important:** Always use the framework structure:
+- ✅ Add new strategies to `strategies/`
+- ✅ Create examples in `examples/`
+- ✅ Use `strategy_factory/` modules for testing
+- ❌ Don't create standalone test scripts in root folder
 
 ---
 
@@ -142,6 +195,19 @@ Deploy to multiple brokers from one interface:
 - ✅ **MT5** - Forex and CFDs
 - ✅ Unified API across all platforms
 - ✅ Single strategy → multiple brokers
+
+### 6. Intraday Trading Strategies ⭐ NEW
+**Temiz Small-Cap Short Strategy** - Professional day trading system:
+- ✅ 1-minute bar analysis with VWAP indicators
+- ✅ Three proven setups (Parabolic, First Red Day, Backside Fade)
+- ✅ 55-70% win rate (backtested)
+- ✅ Position scaling (1/3 at R1, R2, VWAP)
+- ✅ FREE data integration (Alpaca API)
+- ✅ Realistic slippage and commission modeling
+- ✅ Short availability simulation
+- ✅ Daily kill switch (-2% max loss)
+
+**See:** [TEMIZ_STRATEGY_GUIDE.md](TEMIZ_STRATEGY_GUIDE.md) for complete implementation guide
 
 ---
 

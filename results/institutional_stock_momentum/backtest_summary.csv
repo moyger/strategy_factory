@@ -1,0 +1,2 @@
+Strategy,Bear_Asset,Initial_Capital,Final_Value,Total_Return_Pct,Sharpe_Ratio,Max_Drawdown_Pct,Num_Trades,SPY_Return_Pct,Outperformance_Pct,Period
+Institutional Stock Momentum,TLT,100000,80804.56925402851,-19.195430745971485,0.0,-50.182726277497856,1996,95.29546007870539,-114.49089082467688,2020-01-02 to 2024-12-30
