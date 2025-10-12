@@ -491,16 +491,22 @@ class NickRadgeEnhanced:
         )
 
         # VOLATILITY TARGETING: Scale portfolio to target ~20% annual volatility
-        # Calculate simple portfolio returns for vol estimation
+        # IMPORTANT: Use t-1 vol estimate to avoid look-ahead bias
         returns = prices_aligned.pct_change().fillna(0)
-        port_ret_for_vol = (returns * allocations_aligned).sum(axis=1)
 
-        # 20-day realized vol estimate
+        # Calculate portfolio returns using PREVIOUS day's weights
+        weights_prev = allocations_aligned.shift(1).fillna(0)
+        port_ret_for_vol = (returns * weights_prev).sum(axis=1)
+
+        # 20-day realized vol estimate (rolling through yesterday)
         realized_vol = port_ret_for_vol.rolling(window=20).std() * np.sqrt(252)
         target_vol = 0.20  # 20% annual
 
-        # Vol scalar (clip to prevent extreme leverage)
-        vol_scalar = (target_vol / realized_vol.replace(0, np.nan)).clip(lower=0.0, upper=2.0).fillna(1.0)
+        # Vol scalar using yesterday's vol estimate (lag by 1 bar)
+        vol_scalar = (target_vol / realized_vol.replace(0, np.nan)) \
+            .shift(1) \
+            .clip(lower=0.0, upper=2.0) \
+            .fillna(1.0)
 
         # Apply volatility scaling ONLY on rebalance dates to reduce turnover
         rebalance_mask = pd.Series(False, index=allocations_aligned.index)
