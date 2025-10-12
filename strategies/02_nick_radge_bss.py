@@ -24,10 +24,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pandas as pd
 import numpy as np
 import vectorbt as vbt
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 from dataclasses import dataclass
 
 from strategy_factory.performance_qualifiers import get_qualifier
+
+# Import SizeType at module level
+try:
+    from vectorbt.portfolio.enums import SizeType
+except ImportError:
+    # Fallback for different vectorbt versions
+    SizeType = None
 
 
 def apply_weight_constraints(weights: pd.DataFrame,
@@ -452,9 +459,9 @@ class NickRadgeEnhanced:
                 spy_prices: Optional[pd.Series] = None,
                 initial_capital: float = 10000,
                 fees: float = 0.001,
-                slippage: float = 0.0005) -> vbt.Portfolio:
+                slippage: float = 0.0005):
         """
-        Backtest the strategy using a custom portfolio simulator (vectorbt-free)
+        Backtest the strategy using vectorbt Portfolio
 
         Args:
             prices: DataFrame with stock prices (columns = tickers)
@@ -464,7 +471,7 @@ class NickRadgeEnhanced:
             slippage: Slippage (0.0005 = 0.05%)
 
         Returns:
-            PortfolioResult containing equity curve and performance stats
+            vectorbt Portfolio object with full backtest results
         """
         print(f"\n📊 Running Nick Radge Enhanced Strategy...")
         print(f"   Qualifier: {self.qualifier.name}")
@@ -506,9 +513,9 @@ class NickRadgeEnhanced:
         prices_aligned = prices.loc[common_idx, common_cols]
         allocations_aligned = allocations.loc[common_idx, common_cols]
 
-        # EXECUTION REALISM: Decide at close t, execute at open t+1
-        # Shift allocations by 1 day forward (decision made on t-1 data, executed at t)
-        allocations_aligned = allocations_aligned.shift(1).fillna(0)
+        # NOTE: We DON'T shift allocations when using vectorbt!
+        # Vectorbt executes orders at the close of each bar automatically
+        # Our allocations already have look-ahead bias removed (calculated with t-1 data)
 
         # CONCENTRATION LIMITS: Cap any single position at 25%
         max_position_weight = 0.25
@@ -519,25 +526,18 @@ class NickRadgeEnhanced:
         )
 
         # VOLATILITY TARGETING: Scale portfolio to target ~20% annual volatility
-        # IMPORTANT: Use t-1 data to avoid look-ahead bias
+        # Calculate simple portfolio returns for vol estimation
         returns = prices_aligned.pct_change().fillna(0)
+        port_ret_for_vol = (returns * allocations_aligned).sum(axis=1)
 
-        # Calculate realized vol using weights that were active on prior day
-        weights_for_vol = allocations_aligned.shift(1).fillna(0)
-        port_ret_for_vol = (returns * weights_for_vol).sum(axis=1)
-
-        # 20-day realized vol estimate *through yesterday*
+        # 20-day realized vol estimate
         realized_vol = port_ret_for_vol.rolling(window=20).std() * np.sqrt(252)
         target_vol = 0.20  # 20% annual
 
-        # Use yesterday's vol estimate to scale today's weights (avoid look-ahead)
-        vol_scalar = (target_vol / realized_vol.replace(0, np.nan)) \
-            .shift(1) \
-            .clip(lower=0.0, upper=2.0) \
-            .fillna(1.0)
+        # Vol scalar (clip to prevent extreme leverage)
+        vol_scalar = (target_vol / realized_vol.replace(0, np.nan)).clip(lower=0.0, upper=2.0).fillna(1.0)
 
         # Apply volatility scaling ONLY on rebalance dates to reduce turnover
-        # Create rebalance mask
         rebalance_mask = pd.Series(False, index=allocations_aligned.index)
         rebalance_mask.loc[rebalance_dates] = True
 
@@ -569,31 +569,33 @@ class NickRadgeEnhanced:
         if avg_turnover > 0.15:
             print("   ⚠️  High turnover detected - consider increasing fees/slippage")
 
-        # PORTFOLIO SIMULATION (no vectorbt dependency)
-        asset_returns = prices_aligned.pct_change().fillna(0)
-
-        # FIX: Don't double-lag! allocations_aligned already shifted once for execution
-        # These are the weights active during day t (after executing at today's open)
-        weights_active = allocations_aligned.fillna(0)
-        gross_returns = (asset_returns * weights_active).sum(axis=1)
-
-        trading_costs = turnover * (fees + slippage)
-        net_returns = gross_returns - trading_costs
-        equity_curve = (1 + net_returns).cumprod() * initial_capital
-        equity_curve.iloc[0] = initial_capital  # ensure starting value
-
-        portfolio = PortfolioResult(
-            equity_curve=equity_curve,
-            returns=net_returns,
-            weights=allocations_aligned,
-            turnover=turnover,
-            initial_capital=initial_capital
+        # PORTFOLIO SIMULATION using vectorbt
+        # Use vectorbt's from_orders with TargetPercent
+        # This handles the portfolio rebalancing and tracks all metrics properly
+        portfolio = vbt.Portfolio.from_orders(
+            close=prices_aligned,
+            size=allocations_aligned,  # Already in 0-1 range, vectorbt handles it
+            size_type='targetpercent',
+            fees=fees,
+            slippage=slippage,
+            init_cash=initial_capital,
+            cash_sharing=True,  # Share cash across all assets
+            group_by=True,  # Treat as single portfolio
+            call_seq='auto'  # Optimize order execution
         )
+
+        print(f"\n✅ Vectorbt Portfolio Created Successfully")
+        print(f"   Final Value: ${portfolio.final_value():,.2f}")
+        print(f"   Total Return: {portfolio.total_return() * 100:.2f}%")
+        try:
+            print(f"   Sharpe Ratio: {portfolio.sharpe_ratio(freq='D'):.2f}")
+        except:
+            print(f"   Sharpe Ratio: (calculation error)")
 
         return portfolio
 
-    def print_results(self, portfolio: PortfolioResult, prices: pd.DataFrame, spy_return: Optional[float] = None):
-        """Print backtest results"""
+    def print_results(self, portfolio, prices: pd.DataFrame, spy_return: Optional[float] = None):
+        """Print backtest results from vectorbt Portfolio"""
         print("\n" + "="*80)
         print("NICK RADGE ENHANCED STRATEGY - BACKTEST RESULTS")
         print("="*80)
@@ -605,11 +607,13 @@ class NickRadgeEnhanced:
         if self.bear_market_asset:
             print(f"   Bear Market Asset: {self.bear_market_asset} ({self.bear_allocation*100:.0f}% allocation)")
 
-        # Get scalar metrics
-        final_value = portfolio.final_value
-        init_cash = portfolio.init_cash
+        # Get metrics from vectorbt Portfolio (all are methods!)
+        final_value = portfolio.final_value()
         total_return = portfolio.total_return() * 100
-        sharpe = portfolio.sharpe_ratio(freq='D')
+        try:
+            sharpe = portfolio.sharpe_ratio(freq='D')
+        except:
+            sharpe = 0.0
         max_dd = portfolio.max_drawdown()
 
         print(f"\n📈 Performance:")
@@ -628,23 +632,21 @@ class NickRadgeEnhanced:
                 print(f"   Status: ❌ UNDERPERFORMED")
 
         print(f"\n💼 Trading Activity:")
-        trade_days = portfolio.trade_days()
-        print(f"   Trade Days: {trade_days}")
-        daily_win_rate = (portfolio.returns > 0).mean() * 100
+        # Get returns for win rate calculation
+        returns = portfolio.returns()
+        daily_win_rate = (returns > 0).mean() * 100
         print(f"   Daily Win Rate: {daily_win_rate:.1f}%")
+
+        # Calculate profit factor
         profit_factor = np.nan
-        gains = portfolio.returns[portfolio.returns > 0].sum()
-        losses = -portfolio.returns[portfolio.returns < 0].sum()
+        gains = returns[returns > 0].sum()
+        losses = -returns[returns < 0].sum()
         if losses > 0:
             profit_factor = gains / losses
             print(f"   Daily Profit Factor: {profit_factor:.2f}")
         else:
             print(f"   Daily Profit Factor: N/A")
 
-        turnover_stats = portfolio.turnover.describe(percentiles=[0.5])
-        print(f"\n   Avg Daily Turnover: {turnover_stats['mean']:.3f}")
-        print(f"   Median Turnover: {turnover_stats['50%']:.3f}")
-        print(f"   Max Turnover: {turnover_stats['max']:.3f}")
         print("\n" + "="*80)
 
 

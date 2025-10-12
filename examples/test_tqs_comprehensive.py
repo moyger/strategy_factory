@@ -111,7 +111,7 @@ spy_return = ((spy_prices.iloc[-1] / spy_prices.iloc[0]) - 1) * 100
 
 # Get portfolio value series BEFORE print_results (in case it modifies state)
 # The custom PortfolioResult returns equity_curve as a Series
-pf_value = portfolio.equity_curve
+pf_value = portfolio.value()
 
 # Print basic results
 strategy.print_results(portfolio, prices, spy_return)
@@ -290,9 +290,9 @@ sharpe = portfolio.sharpe_ratio(freq='D')
 max_dd = portfolio.max_drawdown()
 
 # Calculate Sortino manually (custom PortfolioResult doesn't have it)
-negative_returns = portfolio.returns[portfolio.returns < 0]
+negative_returns = portfolio.returns()[portfolio.returns() < 0]
 downside_std = negative_returns.std() if len(negative_returns) > 0 else 0
-sortino = (portfolio.returns.mean() / downside_std * np.sqrt(252)) if downside_std > 0 else 0.0
+sortino = (portfolio.returns().mean() / downside_std * np.sqrt(252)) if downside_std > 0 else 0.0
 
 calmar = cagr / (abs(max_dd) * 100) if max_dd != 0 else 0
 

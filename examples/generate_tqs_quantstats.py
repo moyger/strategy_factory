@@ -104,7 +104,7 @@ portfolio = strategy.backtest(
 print(f"\n📊 Extracting returns for QuantStats...")
 
 # Get portfolio value over time - use custom PortfolioResult API
-portfolio_value = portfolio.equity_curve
+portfolio_value = portfolio.value()
 
 # Calculate returns
 strategy_returns = portfolio_value.pct_change().dropna()

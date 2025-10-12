@@ -142,7 +142,7 @@ print("="*80)
 def get_metrics(portfolio, init_cash, prices):
     """Extract metrics from portfolio"""
     # Use custom PortfolioResult API
-    pf_value = portfolio.equity_curve
+    pf_value = portfolio.value()
     final_value = pf_value.iloc[-1]
     total_return = ((final_value / init_cash) - 1) * 100
 
@@ -151,9 +151,9 @@ def get_metrics(portfolio, init_cash, prices):
     max_dd = portfolio.max_drawdown()
 
     # Calculate Sortino manually
-    negative_returns = portfolio.returns[portfolio.returns < 0]
+    negative_returns = portfolio.returns()[portfolio.returns() < 0]
     downside_std = negative_returns.std() if len(negative_returns) > 0 else 0
-    sortino = (portfolio.returns.mean() / downside_std * np.sqrt(252)) if downside_std > 0 else 0.0
+    sortino = (portfolio.returns().mean() / downside_std * np.sqrt(252)) if downside_std > 0 else 0.0
 
     # Calculate CAGR
     days = (prices.index[-1] - prices.index[0]).days
