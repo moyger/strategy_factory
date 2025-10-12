@@ -358,11 +358,19 @@ class NickRadgeEnhanced:
                 current_regime = regime.loc[date]
 
             # Detect regime recovery (BEAR -> BULL)
+            # Check if we're in bear-only portfolio (holding only bear asset like GLD)
+            is_bear_only = False
+            if current_weights is not None and self.bear_market_asset:
+                is_bear_only = (
+                    set(current_weights.index) == {self.bear_market_asset} and
+                    current_weights.iloc[0] > 0
+                )
+
             is_regime_recovery = False
             if (enable_regime_recovery and
                 last_regime == 'BEAR' and
                 current_regime in ['STRONG_BULL', 'WEAK_BULL'] and
-                current_weights is None):
+                (current_weights is None or is_bear_only)):
                 is_regime_recovery = True
                 regime_recoveries += 1
                 print(f"   🔄 Regime recovery on {date.date()} - Re-entering positions early")
@@ -477,6 +485,20 @@ class NickRadgeEnhanced:
         # Generate allocations
         allocations = self.generate_allocations(prices, spy_prices, benchmark_scores)
 
+        # Calculate rebalance dates for vol targeting
+        ideal_dates = pd.date_range(
+            start=prices.index[0],
+            end=prices.index[-1],
+            freq=self.rebalance_freq
+        )
+        all_rebalance_dates = []
+        for ideal_date in ideal_dates:
+            nearest_idx = prices.index.searchsorted(ideal_date)
+            if nearest_idx < len(prices.index):
+                nearest_date = prices.index[int(nearest_idx)]
+                all_rebalance_dates.append(nearest_date)
+        rebalance_dates = pd.DatetimeIndex(all_rebalance_dates).unique()
+
         # Ensure allocations and prices have same index AND columns
         common_idx = prices.index.intersection(allocations.index)
         common_cols = prices.columns.intersection(allocations.columns)
@@ -497,19 +519,33 @@ class NickRadgeEnhanced:
         )
 
         # VOLATILITY TARGETING: Scale portfolio to target ~20% annual volatility
+        # IMPORTANT: Use t-1 data to avoid look-ahead bias
         returns = prices_aligned.pct_change().fillna(0)
 
-        # Calculate realized portfolio returns using current weights
-        portfolio_returns = (returns * allocations_aligned).sum(axis=1)
-        # Rolling 20-day volatility
-        realized_vol = portfolio_returns.rolling(window=20).std() * np.sqrt(252)
-        target_vol = 0.20  # 20% annual
-        vol_scalar = (
-            target_vol / realized_vol.replace(0, np.nan)
-        ).clip(lower=0.0, upper=2.0).fillna(1.0)
+        # Calculate realized vol using weights that were active on prior day
+        weights_for_vol = allocations_aligned.shift(1).fillna(0)
+        port_ret_for_vol = (returns * weights_for_vol).sum(axis=1)
 
-        # Apply volatility scaling and re-apply constraints
-        allocations_aligned = allocations_aligned.mul(vol_scalar, axis=0)
+        # 20-day realized vol estimate *through yesterday*
+        realized_vol = port_ret_for_vol.rolling(window=20).std() * np.sqrt(252)
+        target_vol = 0.20  # 20% annual
+
+        # Use yesterday's vol estimate to scale today's weights (avoid look-ahead)
+        vol_scalar = (target_vol / realized_vol.replace(0, np.nan)) \
+            .shift(1) \
+            .clip(lower=0.0, upper=2.0) \
+            .fillna(1.0)
+
+        # Apply volatility scaling ONLY on rebalance dates to reduce turnover
+        # Create rebalance mask
+        rebalance_mask = pd.Series(False, index=allocations_aligned.index)
+        rebalance_mask.loc[rebalance_dates] = True
+
+        # Scale only on rebalance dates, forward-fill the scalar
+        vol_scalar_rebalance = vol_scalar.where(rebalance_mask).ffill().fillna(1.0)
+        allocations_aligned = allocations_aligned.mul(vol_scalar_rebalance, axis=0)
+
+        # Re-apply constraints after scaling
         allocations_aligned = apply_weight_constraints(
             allocations_aligned,
             max_position=max_position_weight,
@@ -535,8 +571,12 @@ class NickRadgeEnhanced:
 
         # PORTFOLIO SIMULATION (no vectorbt dependency)
         asset_returns = prices_aligned.pct_change().fillna(0)
-        weights_prev = allocations_aligned.shift(1).fillna(0)
-        gross_returns = (asset_returns * weights_prev).sum(axis=1)
+
+        # FIX: Don't double-lag! allocations_aligned already shifted once for execution
+        # These are the weights active during day t (after executing at today's open)
+        weights_active = allocations_aligned.fillna(0)
+        gross_returns = (asset_returns * weights_active).sum(axis=1)
+
         trading_costs = turnover * (fees + slippage)
         net_returns = gross_returns - trading_costs
         equity_curve = (1 + net_returns).cumprod() * initial_capital
@@ -597,9 +637,9 @@ class NickRadgeEnhanced:
         losses = -portfolio.returns[portfolio.returns < 0].sum()
         if losses > 0:
             profit_factor = gains / losses
-            print(f"   Profit Factor: {profit_factor:.2f}")
+            print(f"   Daily Profit Factor: {profit_factor:.2f}")
         else:
-            print(f"   Profit Factor: N/A")
+            print(f"   Daily Profit Factor: N/A")
 
         turnover_stats = portfolio.turnover.describe(percentiles=[0.5])
         print(f"\n   Avg Daily Turnover: {turnover_stats['mean']:.3f}")

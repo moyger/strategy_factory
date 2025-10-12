@@ -1,10 +1,17 @@
 # Critical Fixes Applied to Nick Radge BSS Strategy
 
-## Date: 2025-10-12
+## Date: 2025-10-12 (Updated with Advanced Fixes)
 
 ## Summary
 
 Applied professional-grade fixes to the Nick Radge BSS momentum strategy based on recommendations for eliminating look-ahead bias, improving execution realism, and implementing proper risk management.
+
+**UPDATED:** Added advanced fixes discovered during code review:
+1. Double-lag bug in return calculation
+2. Vol targeting look-ahead bias
+3. Regime recovery bug for bear asset portfolios
+4. Vol scaling limited to rebalance dates (turnover reduction)
+5. Profit factor labeling clarification
 
 ## Fixes Applied
 
@@ -120,61 +127,240 @@ if avg_turnover > 0.15:
 
 ---
 
+## Advanced Fixes (Round 2)
+
+### 6. ✅ Double-Lag Bug in Return Calculation
+
+**Problem:** Returns were being calculated with an extra shift, pushing execution to t+2 instead of t+1.
+
+**Original Code (WRONG):**
+```python
+# Already shifted once for execution realism
+allocations_aligned = allocations_aligned.shift(1).fillna(0)
+...
+# Then shifted AGAIN for return calculation (BUG!)
+weights_prev = allocations_aligned.shift(1).fillna(0)
+gross_returns = (asset_returns * weights_prev).sum(axis=1)
+```
+
+**Fixed Code (CORRECT):**
+```python
+# Already shifted once for execution realism
+allocations_aligned = allocations_aligned.shift(1).fillna(0)
+...
+# Don't double-lag! These weights are already active during day t
+weights_active = allocations_aligned.fillna(0)
+gross_returns = (asset_returns * weights_active).sum(axis=1)
+```
+
+**Impact:** Fixed execution timing from t+2 back to t+1. More accurate returns calculation.
+
+**File Modified:** [strategies/02_nick_radge_bss.py](../strategies/02_nick_radge_bss.py):572-578
+
+---
+
+### 7. ✅ Vol Targeting Look-Ahead Bias
+
+**Problem:** Volatility estimate used same-day returns and weights, then scaled those same weights (look-ahead).
+
+**Original Code (WRONG):**
+```python
+# Uses t returns and t weights to estimate vol
+portfolio_returns = (returns * allocations_aligned).sum(axis=1)
+realized_vol = portfolio_returns.rolling(window=20).std() * np.sqrt(252)
+vol_scalar = (target_vol / realized_vol).clip(lower=0.0, upper=2.0).fillna(1.0)
+# Scales t weights with t-based estimate (look-ahead!)
+allocations_aligned = allocations_aligned.mul(vol_scalar, axis=0)
+```
+
+**Fixed Code (CORRECT):**
+```python
+# Use weights active on PRIOR day for vol estimate
+weights_for_vol = allocations_aligned.shift(1).fillna(0)
+port_ret_for_vol = (returns * weights_for_vol).sum(axis=1)
+
+# 20-day realized vol estimate *through yesterday*
+realized_vol = port_ret_for_vol.rolling(window=20).std() * np.sqrt(252)
+
+# Use YESTERDAY'S vol estimate to scale today's weights
+vol_scalar = (target_vol / realized_vol.replace(0, np.nan)) \
+    .shift(1) \  # <-- Key fix: lag the scalar
+    .clip(lower=0.0, upper=2.0) \
+    .fillna(1.0)
+```
+
+**Impact:** Eliminates subtle look-ahead bias in volatility targeting. Uses only historical data.
+
+**File Modified:** [strategies/02_nick_radge_bss.py](../strategies/02_nick_radge_bss.py):507-523
+
+---
+
+### 8. ✅ Vol Scaling Limited to Rebalance Dates
+
+**Problem:** Vol scaling every day caused excessive turnover and trading costs.
+
+**Original Code (WRONG):**
+```python
+# Scales portfolio EVERY day as volatility changes
+allocations_aligned = allocations_aligned.mul(vol_scalar, axis=0)
+```
+
+**Fixed Code (CORRECT):**
+```python
+# Create rebalance mask
+rebalance_mask = pd.Series(False, index=allocations_aligned.index)
+rebalance_mask.loc[rebalance_dates] = True
+
+# Scale ONLY on rebalance dates, forward-fill the scalar
+vol_scalar_rebalance = vol_scalar.where(rebalance_mask).ffill().fillna(1.0)
+allocations_aligned = allocations_aligned.mul(vol_scalar_rebalance, axis=0)
+```
+
+**Impact:**
+- Reduces turnover dramatically (daily scaling eliminated)
+- Lower trading costs
+- Volatility adjustment still applied, just at rebalance points
+- More realistic implementation
+
+**File Modified:** [strategies/02_nick_radge_bss.py](../strategies/02_nick_radge_bss.py):525-532
+
+---
+
+### 9. ✅ Regime Recovery for Bear Asset Portfolios
+
+**Problem:** When holding bear asset (GLD), regime recovery didn't trigger because `current_weights` wasn't `None`.
+
+**Original Code (WRONG):**
+```python
+# Only triggers recovery if current_weights is None
+if (enable_regime_recovery and
+    last_regime == 'BEAR' and
+    current_regime in ['STRONG_BULL', 'WEAK_BULL'] and
+    current_weights is None):  # <-- BUG: Never None when holding GLD
+    is_regime_recovery = True
+```
+
+**Fixed Code (CORRECT):**
+```python
+# Check if we're in bear-only portfolio (holding only GLD)
+is_bear_only = False
+if current_weights is not None and self.bear_market_asset:
+    is_bear_only = (
+        set(current_weights.index) == {self.bear_market_asset} and
+        current_weights.iloc[0] > 0
+    )
+
+# Trigger recovery from cash OR bear asset
+if (enable_regime_recovery and
+    last_regime == 'BEAR' and
+    current_regime in ['STRONG_BULL', 'WEAK_BULL'] and
+    (current_weights is None or is_bear_only)):  # <-- Fixed!
+    is_regime_recovery = True
+```
+
+**Impact:** Regime recovery now works correctly when using GLD as bear asset. Re-enters stocks promptly when market turns bullish.
+
+**File Modified:** [strategies/02_nick_radge_bss.py](../strategies/02_nick_radge_bss.py):360-376
+
+---
+
+### 10. ✅ Profit Factor Labeling
+
+**Problem:** Profit factor calculated on daily PnL, not per-trade, but label was ambiguous.
+
+**Original Code (AMBIGUOUS):**
+```python
+print(f"   Profit Factor: {profit_factor:.2f}")
+```
+
+**Fixed Code (CLEAR):**
+```python
+print(f"   Daily Profit Factor: {profit_factor:.2f}")
+```
+
+**Impact:** Clarifies that this is daily profit factor (gains/losses on daily returns), not per-trade profit factor.
+
+**File Modified:** [strategies/02_nick_radge_bss.py](../strategies/02_nick_radge_bss.py):640-642
+
+---
+
 ## Performance Comparison
 
-### Before Fixes (Original Strategy)
-- **Total Return:** +250.96%
-- **CAGR:** 24.30%
-- **Sharpe Ratio:** 1.37
-- **Sortino Ratio:** 2.08
-- **Max Drawdown:** -21.52%
-- **Calmar Ratio:** 1.13
-- **Win Rate:** 71.36%
-- **Profit Factor:** 3.29
+### After All Fixes (Round 1 + Round 2)
 
-### After Fixes (Improved Strategy)
-- **Total Return:** +297.40% ⬆️
-- **CAGR:** 27.01% ⬆️
-- **Sharpe Ratio:** 1.49 ⬆️
-- **Sortino Ratio:** 2.24 ⬆️
-- **Max Drawdown:** -22.19% ⬇️ (slightly worse)
-- **Calmar Ratio:** 1.22 ⬆️
-- **Win Rate:** 73.99% ⬆️
-- **Profit Factor:** 3.54 ⬆️
+**TQS Strategy Results (2020-01-02 to 2025-10-10):**
+- **Total Return:** +182.74%
+- **Final Equity:** $14,137 (from $5,000)
+- **Sharpe Ratio:** 1.21
+- **Max Drawdown:** -24.44%
+- **Daily Win Rate:** 51.0%
+- **Daily Profit Factor:** 1.25
+- **Avg Daily Turnover:** 0.024 (very low!)
+- **Regime Recoveries:** 4 early re-entries
 
-### Unexpected Result 🎯
+**BSS Strategy Results (same period):**
+- **Total Return:** +163.87%
+- **Sharpe Ratio:** 1.09
+- **Max Drawdown:** -27.69%
 
-**The "fixed" version actually performed BETTER (+46% higher returns)!**
+**SPY Buy & Hold:**
+- **Total Return:** +118.71%
+- **CAGR:** 14.52%
 
-This counterintuitive result is due to:
+### Key Improvements from Advanced Fixes
 
-1. **Volatility Targeting Added Leverage at Right Times**
-   - During low-volatility periods (2020-2021 bull run), strategy scaled up to 2x
-   - During high-volatility periods (2022 bear, 2024 correction), strategy reduced exposure
-   - Net effect: Captured more upside while limiting downside
+1. **Lower Turnover** ⬇️
+   - Avg daily turnover: 0.024 (down from ~0.15+)
+   - Vol scaling limited to rebalance dates
+   - Dramatically reduced trading costs
 
-2. **Concentration Limits Forced Diversification**
-   - 25% cap prevented over-concentration in single names
-   - Improved risk-adjusted returns through better diversification
-   - Reduced tail risk from individual stock blowups
+2. **Proper Execution Timing** ✅
+   - Fixed double-lag bug (was t+2, now t+1)
+   - More accurate return attribution
+   - Returns correctly reflect t weights on t prices
 
-3. **Look-Ahead Fix Was Neutral**
-   - Lagging signals by 1 day had minimal impact on quarterly rebalancing strategy
-   - Most signals are stable over multi-day periods
-   - Execution delay already incorporated in original design
+3. **No Look-Ahead Bias in Vol Targeting** ✅
+   - Vol estimate uses t-1 data
+   - Vol scalar lagged by 1 day
+   - Honest volatility-based risk management
+
+4. **Regime Recovery Works with GLD** ✅
+   - 4 successful early re-entries detected
+   - Exits GLD promptly when market turns bullish
+   - Captures momentum rebounds
+
+5. **Clear Metrics Labeling** ✅
+   - "Daily Profit Factor" (not trade-based)
+   - Eliminates confusion in reporting
+
+### Impact of Fixes
+
+**Accuracy:** All look-ahead biases eliminated ✅
+**Realism:** Execution timing corrected ✅
+**Efficiency:** Turnover reduced by ~85% ✅
+**Functionality:** Regime recovery fixed ✅
+
+**Performance:** Still beats SPY by +64% despite more conservative implementation
 
 ## Professional Standards Check
 
+### TQS Strategy (After All Fixes)
+
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
-| **Sharpe Ratio** | ≥ 1.6 | 1.49 | ⚠️ Close (0.11 short) |
-| **Sortino Ratio** | ≥ 2.2 | 2.24 | ✅ PASS |
-| **Max Drawdown** | ≤ 22% | -22.19% | ✅ PASS (barely) |
-| **Calmar Ratio** | ≥ 1.2 | 1.22 | ✅ PASS |
+| **Sharpe Ratio** | ≥ 1.6 | 1.21 | ❌ FAIL (0.39 short) |
+| **Sortino Ratio** | ≥ 2.2 | 1.66 | ❌ FAIL (0.54 short) |
+| **Max Drawdown** | ≤ 22% | -24.44% | ❌ FAIL (2.44% over) |
+| **Calmar Ratio** | ≥ 1.2 | 0.81 | ❌ FAIL (0.39 short) |
 
-**Overall Grade: GOOD** ⚠️
+**Overall Grade: FAIR** ⚠️
 
-Strategy is **solid and tradeable** but falls slightly short of "professional-grade" Sharpe target.
+Strategy is **tradeable and profitable** but doesn't meet institutional-grade standards. This is typical for:
+- 2020-2025 period includes COVID crash and 2022 bear market
+- More realistic implementation (no look-ahead, proper timing)
+- Conservative risk management (25% concentration limit, vol targeting)
+
+**Still beats SPY by +64% over 5.77 years**, which is solid retail/small-fund performance.
 
 ## Further Improvements Recommended
 
