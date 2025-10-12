@@ -24,17 +24,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pandas as pd
 import numpy as np
 import vectorbt as vbt
-from typing import Dict, Optional, Union
-from dataclasses import dataclass
+from typing import Dict, Optional
 
 from strategy_factory.performance_qualifiers import get_qualifier
-
-# Import SizeType at module level
-try:
-    from vectorbt.portfolio.enums import SizeType
-except ImportError:
-    # Fallback for different vectorbt versions
-    SizeType = None
 
 
 def apply_weight_constraints(weights: pd.DataFrame,
@@ -54,45 +46,8 @@ def apply_weight_constraints(weights: pd.DataFrame,
     return constrained.fillna(0.0)
 
 
-@dataclass
-class PortfolioResult:
-    """Lightweight container for backtest results."""
-    equity_curve: pd.Series
-    returns: pd.Series
-    weights: pd.DataFrame
-    turnover: pd.Series
-    initial_capital: float
-
-    @property
-    def final_value(self) -> float:
-        return float(self.equity_curve.iloc[-1])
-
-    @property
-    def init_cash(self) -> float:
-        return self.initial_capital
-
-    def total_return(self) -> float:
-        return (self.final_value / self.initial_capital) - 1.0
-
-    def sharpe_ratio(self, freq: str = 'D') -> float:
-        std = self.returns.std()
-        if std == 0 or np.isnan(std):
-            return 0.0
-        annualization = {
-            'D': np.sqrt(252),
-            'W': np.sqrt(52),
-            'M': np.sqrt(12)
-        }.get(freq.upper(), np.sqrt(252))
-        return float((self.returns.mean() / std) * annualization)
-
-    def max_drawdown(self) -> float:
-        running_max = self.equity_curve.cummax()
-        drawdown = self.equity_curve / running_max - 1.0
-        return float(drawdown.min())
-
-    def trade_days(self, threshold: float = 1e-6) -> int:
-        """Approximate number of trading days based on non-zero turnover."""
-        return int((self.turnover.abs() > threshold).sum())
+# PortfolioResult class removed - now using vectorbt.Portfolio directly
+# All portfolio metrics are accessed via vectorbt's built-in methods
 
 
 class NickRadgeEnhanced:
@@ -461,17 +416,27 @@ class NickRadgeEnhanced:
                 fees: float = 0.001,
                 slippage: float = 0.0005):
         """
-        Backtest the strategy using vectorbt Portfolio
+        Backtest the strategy using vectorbt's Portfolio.from_orders()
+
+        This method generates target allocation weights based on the strategy's
+        qualifier (BSS, TQS, etc.) and market regime, then uses vectorbt to
+        simulate portfolio rebalancing with realistic fees and slippage.
 
         Args:
             prices: DataFrame with stock prices (columns = tickers)
-            spy_prices: SPY prices for regime filtering
-            initial_capital: Starting capital
-            fees: Trading fees (0.001 = 0.1%)
-            slippage: Slippage (0.0005 = 0.05%)
+            spy_prices: SPY prices for regime filtering (optional)
+            initial_capital: Starting capital (default: 10000)
+            fees: Trading fees as decimal (0.001 = 0.1%)
+            slippage: Slippage as decimal (0.0005 = 0.05%)
 
         Returns:
-            vectorbt Portfolio object with full backtest results
+            vectorbt.Portfolio object with methods:
+                - final_value(): Final portfolio value
+                - total_return(): Total return as decimal
+                - sharpe_ratio(freq='D'): Annualized Sharpe ratio
+                - max_drawdown(): Maximum drawdown as decimal
+                - value(): Portfolio value time series (DataFrame)
+                - returns(): Portfolio returns time series (Series)
         """
         print(f"\n📊 Running Nick Radge Enhanced Strategy...")
         print(f"   Qualifier: {self.qualifier.name}")
@@ -589,8 +554,8 @@ class NickRadgeEnhanced:
         print(f"   Total Return: {portfolio.total_return() * 100:.2f}%")
         try:
             print(f"   Sharpe Ratio: {portfolio.sharpe_ratio(freq='D'):.2f}")
-        except:
-            print(f"   Sharpe Ratio: (calculation error)")
+        except (ValueError, AttributeError) as e:
+            print(f"   Sharpe Ratio: (calculation error: {e})")
 
         return portfolio
 
@@ -612,7 +577,7 @@ class NickRadgeEnhanced:
         total_return = portfolio.total_return() * 100
         try:
             sharpe = portfolio.sharpe_ratio(freq='D')
-        except:
+        except (ValueError, AttributeError):
             sharpe = 0.0
         max_dd = portfolio.max_drawdown()
 
