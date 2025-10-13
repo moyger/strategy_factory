@@ -491,17 +491,41 @@ class NickRadgeCryptoHybrid:
                 f"   Core assets are required and cannot be auto-downloaded (strategy depends on them)."
             )
 
-        # Validate data - remove columns with any NaN values
-        nan_cols = prices.columns[prices.isna().any()].tolist()
-        if nan_cols:
-            print(f"\n⚠️  Removing {len(nan_cols)} tickers with NaN values: {nan_cols[:5]}...")
-            prices = prices.drop(columns=nan_cols)
+        # === FIX: Fill forward/backward BEFORE dropping columns ===
+        # Many crypto assets have partial histories (start mid-backtest)
+        # Fill first, then only drop if still completely NaN
+
+        print(f"\n📊 Data Cleaning:")
+        initial_nan_count = prices.isna().sum().sum()
+        print(f"   Initial NaN values: {initial_nan_count}")
 
         # Forward fill any remaining NaN values
         prices = prices.fillna(method='ffill').fillna(method='bfill')
 
         # Ensure no inf values
         prices = prices.replace([np.inf, -np.inf], np.nan).fillna(method='ffill').fillna(method='bfill')
+
+        # NOW check for columns that are STILL completely NaN after filling
+        # (these are truly unusable, not just partial histories)
+        still_nan_cols = prices.columns[prices.isna().all()].tolist()
+        if still_nan_cols:
+            print(f"   ⚠️  Dropping {len(still_nan_cols)} completely empty columns: {still_nan_cols[:5]}")
+            prices = prices.drop(columns=still_nan_cols)
+
+        # Check for columns with SOME remaining NaN (>10% missing after fill)
+        nan_pct = prices.isna().sum() / len(prices)
+        high_nan_cols = nan_pct[nan_pct > 0.10].index.tolist()
+        if high_nan_cols:
+            print(f"   ⚠️  Dropping {len(high_nan_cols)} columns with >10% NaN after fill: {high_nan_cols[:5]}")
+            prices = prices.drop(columns=high_nan_cols)
+
+        # Final pass: fill any remaining scattered NaNs with 0 (last resort)
+        remaining_nans = prices.isna().sum().sum()
+        if remaining_nans > 0:
+            print(f"   ⚠️  Filling {remaining_nans} remaining scattered NaNs with forward fill")
+            prices = prices.fillna(method='ffill').fillna(0)
+
+        print(f"   ✅ Final clean: {len(prices.columns)} columns, {len(prices)} rows, 0 NaNs")
 
         # Generate allocations
         allocations = self.generate_allocations(prices, btc_prices)
@@ -550,10 +574,37 @@ class NickRadgeCryptoHybrid:
         )
 
         print(f"\n✅ Backtest Complete!")
-        print(f"   Final Value: ${portfolio.value().iloc[-1]:,.2f}")
-        print(f"   Total Return: {portfolio.total_return() * 100:.2f}%")  # total_return() already returns ratio
+
+        # === FIX: Safely extract scalar from portfolio value ===
+        final_val = portfolio.value().iloc[-1]
+        if isinstance(final_val, pd.Series):
+            final_val = float(final_val.iloc[0])  # type: ignore
+        elif isinstance(final_val, np.ndarray):
+            final_val = float(final_val[0])  # type: ignore
+        else:
+            final_val = float(final_val)
+
+        # === FIX: Safely extract scalar from total return ===
+        total_ret = portfolio.total_return()
+        if isinstance(total_ret, pd.Series):
+            total_ret = float(total_ret.iloc[0])  # type: ignore
+        elif isinstance(total_ret, np.ndarray):
+            total_ret = float(total_ret[0])  # type: ignore
+        else:
+            total_ret = float(total_ret)
+
+        print(f"   Final Value: ${final_val:,.2f}")
+        print(f"   Total Return: {total_ret * 100:.2f}%")  # total_return() already returns ratio
 
         return portfolio
+
+    def _safe_scalar(self, value):
+        """Safely extract scalar from Series/Array/scalar"""
+        if isinstance(value, pd.Series):
+            return float(value.iloc[0])  # type: ignore
+        elif isinstance(value, np.ndarray):
+            return float(value[0])  # type: ignore
+        return float(value)
 
     def print_results(self, portfolio: vbt.Portfolio, prices: pd.DataFrame):
         """Print backtest results"""
@@ -566,18 +617,21 @@ class NickRadgeCryptoHybrid:
         print(f"   Satellite: {self.satellite_allocation:.0%} (Top {self.satellite_size} alts)")
         print(f"   Period: {prices.index[0].date()} to {prices.index[-1].date()}")
 
-        # VectorBT returns ratios, not decimals (e.g., 1.42 for +42%, not 0.42)
+        # === FIX: Use _safe_scalar helper to handle Series/Array returns ===
         total_return_val = portfolio.total_return() if callable(portfolio.total_return) else portfolio.total_return
         sharpe_val = portfolio.sharpe_ratio(freq='D') if callable(portfolio.sharpe_ratio) else portfolio.sharpe_ratio
         max_dd_val = portfolio.max_drawdown() if callable(portfolio.max_drawdown) else portfolio.max_drawdown
+        final_val = portfolio.value().iloc[-1]
 
-        total_return = float(total_return_val) * 100  # type: ignore
-        sharpe = float(sharpe_val)  # type: ignore
-        max_dd = float(max_dd_val) * 100  # type: ignore
+        # Safely extract scalars
+        total_return = self._safe_scalar(total_return_val) * 100
+        sharpe = self._safe_scalar(sharpe_val)
+        max_dd = self._safe_scalar(max_dd_val) * 100
+        final_equity = self._safe_scalar(final_val)
 
         print(f"\n📈 Performance:")
         print(f"   Total Return: {total_return:.2f}%")
-        print(f"   Final Equity: ${portfolio.value().iloc[-1]:,.2f}")
+        print(f"   Final Equity: ${final_equity:,.2f}")
         print(f"   Sharpe Ratio: {sharpe:.2f}")
         print(f"   Max Drawdown: {max_dd:.2f}%")
 
