@@ -302,6 +302,43 @@ class NickRadgeCryptoHybrid:
         for i, date in enumerate(prices.index):
             current_regime = regime.loc[date]
 
+            # === FIX: Skip allocations if any required asset has NaN price ===
+            # Leading NaNs mean the asset didn't exist yet - can't trade what doesn't exist!
+            # This prevents vectorbt from sizing trades against NaN prices
+            required_assets_for_regime = []
+
+            # Always check core assets (used in all non-BEAR regimes)
+            if current_regime != 'BEAR':
+                required_assets_for_regime.extend(self.core_assets)
+
+            # Check bear asset (used in BEAR, WEAK_BULL, UNKNOWN regimes)
+            if current_regime in ['BEAR', 'WEAK_BULL', 'UNKNOWN']:
+                required_assets_for_regime.append(self.bear_asset)
+
+            # Check if all required assets have valid prices
+            has_nan_price = False
+            for asset in required_assets_for_regime:
+                if asset in prices.columns:
+                    price_value = prices.at[date, asset]  # .at[] returns scalar, not DataFrame
+                    # Check if price is NaN or invalid (<=0)
+                    if pd.isna(price_value):
+                        has_nan_price = True
+                        break
+                    try:
+                        if float(price_value) <= 0:  # type: ignore
+                            has_nan_price = True
+                            break
+                    except (ValueError, TypeError):
+                        # Non-numeric price value
+                        has_nan_price = True
+                        break
+
+            # Skip this date if any required asset has NaN/invalid price
+            if has_nan_price:
+                # Leave allocations at 0.0 (100% cash) for this date
+                # This is correct behavior - we can't trade what doesn't have data yet
+                continue
+
             # Rebalance satellite on rebalance dates (or first date for initial pick)
             if date in actual_rebalance_dates or (i == 0 and date not in actual_rebalance_dates):
                 selected = self.select_satellite(satellite_prices, indicators, date)
@@ -330,17 +367,22 @@ class NickRadgeCryptoHybrid:
                     allocations.loc[date, asset] = core_weight
 
                 # Satellite: 15% (reduced from 30%)
-                if self.use_momentum_weighting and current_satellite and satellite_scores:
+                # FIX: Only allocate to satellites with valid prices (not NaN)
+                valid_satellites = [t for t in current_satellite
+                                  if t in prices.columns and not pd.isna(prices.at[date, t]) and prices.at[date, t] > 0]  # type: ignore
+
+                if self.use_momentum_weighting and valid_satellites and satellite_scores:
                     # Momentum-weighted
-                    total_score = sum(satellite_scores.values())
+                    total_score = sum(satellite_scores[t] for t in valid_satellites if t in satellite_scores)
                     if total_score > 0:
-                        for ticker in current_satellite:
-                            weight = (satellite_scores[ticker] / total_score) * reduced_satellite
-                            allocations.loc[date, ticker] = weight
+                        for ticker in valid_satellites:
+                            if ticker in satellite_scores:
+                                weight = (satellite_scores[ticker] / total_score) * reduced_satellite
+                                allocations.loc[date, ticker] = weight
                 else:
                     # Equal-weighted
-                    sat_weight = reduced_satellite / len(current_satellite) if current_satellite else 0
-                    for ticker in current_satellite:
+                    sat_weight = reduced_satellite / len(valid_satellites) if valid_satellites else 0
+                    for ticker in valid_satellites:
                         allocations.loc[date, ticker] = sat_weight
 
                 # PAXG: 15%
@@ -357,15 +399,20 @@ class NickRadgeCryptoHybrid:
                     allocations.loc[date, asset] = core_weight
 
                 # Satellite: 30% momentum or equal weighted
-                if self.use_momentum_weighting and current_satellite and satellite_scores:
-                    total_score = sum(satellite_scores.values())
+                # FIX: Only allocate to satellites with valid prices (not NaN)
+                valid_satellites = [t for t in current_satellite
+                                  if t in prices.columns and not pd.isna(prices.at[date, t]) and prices.at[date, t] > 0]  # type: ignore
+
+                if self.use_momentum_weighting and valid_satellites and satellite_scores:
+                    total_score = sum(satellite_scores[t] for t in valid_satellites if t in satellite_scores)
                     if total_score > 0:
-                        for ticker in current_satellite:
-                            weight = (satellite_scores[ticker] / total_score) * self.satellite_allocation
-                            allocations.loc[date, ticker] = weight
+                        for ticker in valid_satellites:
+                            if ticker in satellite_scores:
+                                weight = (satellite_scores[ticker] / total_score) * self.satellite_allocation
+                                allocations.loc[date, ticker] = weight
                 else:
-                    sat_weight = self.satellite_allocation / len(current_satellite) if current_satellite else 0
-                    for ticker in current_satellite:
+                    sat_weight = self.satellite_allocation / len(valid_satellites) if valid_satellites else 0
+                    for ticker in valid_satellites:
                         allocations.loc[date, ticker] = sat_weight
 
             # UNKNOWN regime: Same as WEAK_BULL (cautious)
@@ -379,15 +426,20 @@ class NickRadgeCryptoHybrid:
                 for asset in available_core:
                     allocations.loc[date, asset] = core_weight
 
-                if self.use_momentum_weighting and current_satellite and satellite_scores:
-                    total_score = sum(satellite_scores.values())
+                # FIX: Only allocate to satellites with valid prices (not NaN)
+                valid_satellites = [t for t in current_satellite
+                                  if t in prices.columns and not pd.isna(prices.at[date, t]) and prices.at[date, t] > 0]  # type: ignore
+
+                if self.use_momentum_weighting and valid_satellites and satellite_scores:
+                    total_score = sum(satellite_scores[t] for t in valid_satellites if t in satellite_scores)
                     if total_score > 0:
-                        for ticker in current_satellite:
-                            weight = (satellite_scores[ticker] / total_score) * reduced_satellite
-                            allocations.loc[date, ticker] = weight
+                        for ticker in valid_satellites:
+                            if ticker in satellite_scores:
+                                weight = (satellite_scores[ticker] / total_score) * reduced_satellite
+                                allocations.loc[date, ticker] = weight
                 else:
-                    sat_weight = reduced_satellite / len(current_satellite) if current_satellite else 0
-                    for ticker in current_satellite:
+                    sat_weight = reduced_satellite / len(valid_satellites) if valid_satellites else 0
+                    for ticker in valid_satellites:
                         allocations.loc[date, ticker] = sat_weight
 
                 allocations.loc[date, self.bear_asset] = paxg_allocation
@@ -510,8 +562,21 @@ class NickRadgeCryptoHybrid:
 
         # Step 3: Drop columns that are COMPLETELY empty after forward fill
         # (these have no data at all, cannot be used)
+        # CRITICAL: Fail fast if required assets are all-NaN (failed download)
         completely_empty = prices.columns[prices.isna().all()].tolist()
         if completely_empty:
+            # Check if any required assets are completely empty
+            required_assets = set(self.core_assets + [self.bear_asset])
+            missing_required = [col for col in completely_empty if col in required_assets]
+
+            if missing_required:
+                raise ValueError(
+                    f"❌ CRITICAL: Required assets are completely empty (failed download?): {missing_required}\n"
+                    f"   Core assets: {self.core_assets}\n"
+                    f"   Bear asset: {self.bear_asset}\n"
+                    f"   Cannot backtest without these assets. Please check your data sources."
+                )
+
             print(f"   ⚠️  Dropping {len(completely_empty)} completely empty columns: {completely_empty}")
             prices = prices.drop(columns=completely_empty)
 
