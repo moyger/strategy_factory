@@ -40,9 +40,9 @@ class MLQualifier:
 
     def __init__(self,
                  lookback_years: int = 3,
-                 n_estimators: int = 100,
-                 max_depth: int = 10,
-                 min_samples_split: int = 50,
+                 n_estimators: int = 200,  # INCREASED: More trees for better learning
+                 max_depth: int = 15,       # INCREASED: Deeper trees for complex patterns
+                 min_samples_split: int = 30,  # DECREASED: Less conservative
                  random_state: int = 42,
                  retrain_freq: str = 'QS'):
         """
@@ -77,7 +77,8 @@ class MLQualifier:
         self.feature_importance = None
         self.trained_dates = []
 
-    def engineer_features(self, prices: pd.DataFrame, spy_prices: Optional[pd.Series] = None) -> pd.DataFrame:
+    def engineer_features(self, prices: pd.DataFrame, spy_prices: Optional[pd.Series] = None,
+                         volumes: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         """
         Engineer technical features for ML model
 
@@ -86,6 +87,7 @@ class MLQualifier:
         Args:
             prices: DataFrame with stock prices (columns = tickers)
             spy_prices: SPY prices for relative strength (optional)
+            volumes: DataFrame with volume data (optional, same structure as prices)
 
         Returns:
             DataFrame with engineered features (rows = dates, cols = tickers × features)
@@ -101,11 +103,14 @@ class MLQualifier:
 
             # Calculate indicators (all lagged by 1 day)
 
-            # 1. MOMENTUM FEATURES
+            # 1. MOMENTUM FEATURES (Multi-Timeframe)
+            roc_10 = price.pct_change(10).shift(1)   # NEW: 2-week momentum
             roc_20 = price.pct_change(20).shift(1)
             roc_50 = price.pct_change(50).shift(1)
             roc_100 = price.pct_change(100).shift(1)
+            roc_200 = price.pct_change(200).shift(1)  # NEW: Long-term momentum
             roc_acceleration = (roc_20 - roc_50).shift(1)
+            roc_jerk = (roc_10 - roc_20).shift(1)    # NEW: Momentum "jerk"
 
             # 2. VOLATILITY FEATURES
             returns = price.pct_change().shift(1)
@@ -154,34 +159,74 @@ class MLQualifier:
             above_ma100 = (price.shift(1) > ma_100).astype(float)
             above_ma200 = (price.shift(1) > ma_200).astype(float)
 
-            # 5. VOLUME FEATURES (if available - otherwise skip)
-            # For now, we'll skip volume since not all data sources have it
+            # 5. VOLUME FEATURES (NEW - Critical for momentum!)
+            if volumes is not None and ticker in volumes.columns:
+                volume = volumes[ticker]
+
+                # Volume moving average
+                volume_ma20 = volume.rolling(20).mean().shift(1)
+                volume_ma50 = volume.rolling(50).mean().shift(1)
+
+                # Volume ratio (current vs average)
+                volume_ratio = (volume.shift(1) / volume_ma20)
+
+                # Volume trend (short vs long average)
+                volume_trend = (volume_ma20 / volume_ma50 - 1)
+
+                # Volume spike detection (>2x average)
+                volume_spike = (volume.shift(1) > 2 * volume_ma20).astype(float)
+
+                # Volume acceleration
+                volume_accel = volume.pct_change(10).shift(1)
+            else:
+                # Default values if no volume data
+                volume_ratio = pd.Series(1.0, index=price.index)
+                volume_trend = pd.Series(0.0, index=price.index)
+                volume_spike = pd.Series(0.0, index=price.index)
+                volume_accel = pd.Series(0.0, index=price.index)
 
             # 6. RELATIVE STRENGTH vs SPY
             if spy_prices is not None:
-                spy_returns = spy_prices.pct_change(20).shift(1)
-                relative_strength = (roc_20 - spy_returns).shift(1)
+                spy_returns_20 = spy_prices.pct_change(20).shift(1)
+                spy_returns_50 = spy_prices.pct_change(50).shift(1)
+                relative_strength_20 = (roc_20 - spy_returns_20).shift(1)
+                relative_strength_50 = (roc_50 - spy_returns_50).shift(1)
             else:
-                relative_strength = pd.Series(0, index=price.index)
+                relative_strength_20 = pd.Series(0, index=price.index)
+                relative_strength_50 = pd.Series(0, index=price.index)
 
             # Combine features into DataFrame
             ticker_features = pd.DataFrame({
+                # Momentum (7 features)
+                f'{ticker}_roc_10': roc_10,
                 f'{ticker}_roc_20': roc_20,
                 f'{ticker}_roc_50': roc_50,
                 f'{ticker}_roc_100': roc_100,
+                f'{ticker}_roc_200': roc_200,
                 f'{ticker}_roc_accel': roc_acceleration,
+                f'{ticker}_roc_jerk': roc_jerk,
+                # Volatility (3 features)
                 f'{ticker}_vol_20': realized_vol_20,
                 f'{ticker}_atr_pct': atr_pct,
                 f'{ticker}_bb_pos': bb_position,
+                # Trend (2 features)
                 f'{ticker}_macd_hist': macd_hist,
                 f'{ticker}_rsi': rsi,
+                # Moving Averages (6 features)
                 f'{ticker}_vs_ma50': price_vs_ma50,
                 f'{ticker}_vs_ma100': price_vs_ma100,
                 f'{ticker}_vs_ma200': price_vs_ma200,
                 f'{ticker}_above_ma50': above_ma50,
                 f'{ticker}_above_ma100': above_ma100,
                 f'{ticker}_above_ma200': above_ma200,
-                f'{ticker}_rel_strength': relative_strength,
+                # Volume (4 features - NEW!)
+                f'{ticker}_volume_ratio': volume_ratio,
+                f'{ticker}_volume_trend': volume_trend,
+                f'{ticker}_volume_spike': volume_spike,
+                f'{ticker}_volume_accel': volume_accel,
+                # Relative Strength (2 features)
+                f'{ticker}_rel_strength_20': relative_strength_20,
+                f'{ticker}_rel_strength_50': relative_strength_50,
             })
 
             features_list.append(ticker_features)
@@ -293,7 +338,8 @@ class MLQualifier:
 
         return model
 
-    def calculate(self, prices: pd.DataFrame, spy_prices: Optional[pd.Series] = None) -> pd.DataFrame:
+    def calculate(self, prices: pd.DataFrame, spy_prices: Optional[pd.Series] = None,
+                  volumes: Optional[pd.DataFrame] = None, **kwargs) -> pd.DataFrame:
         """
         Calculate ML-based scores using walk-forward prediction
 
@@ -305,12 +351,19 @@ class MLQualifier:
         Args:
             prices: Stock prices (DataFrame)
             spy_prices: SPY prices for relative strength (optional)
+            volumes: Volume data (DataFrame, optional but recommended)
+            **kwargs: Additional arguments (ignored, for compatibility)
 
         Returns:
             DataFrame with ML scores (probability of outperformance)
         """
         print(f"   [ML] Engineering features for {len(prices.columns)} stocks...")
-        features = self.engineer_features(prices, spy_prices)
+        if volumes is not None:
+            print(f"   [ML] Using volume data (24 features per stock)")
+        else:
+            print(f"   [ML] No volume data (20 features per stock)")
+
+        features = self.engineer_features(prices, spy_prices, volumes)
 
         if features.empty:
             print("   [ML] WARNING: No features engineered")

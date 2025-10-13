@@ -65,14 +65,18 @@ def main():
 
     print(f"   Downloading {len(tickers)} tickers...")
 
-    data = yf.download(tickers, start='2020-01-01', end='2025-01-31', progress=False, auto_adjust=True)
+    data = yf.download(tickers, start='2020-01-01', end='2025-01-31', progress=False, auto_adjust=False)
 
     if isinstance(data.columns, pd.MultiIndex):
         prices = data['Close']
+        volumes = data['Volume']
     else:
         prices = data
+        volumes = None
 
     print(f"   ✅ Downloaded {len(prices)} bars ({prices.index[0].date()} to {prices.index[-1].date()})")
+    if volumes is not None:
+        print(f"   ✅ Volume data available for {len(volumes.columns)} tickers")
     print()
 
     # =================================================================
