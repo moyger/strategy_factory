@@ -323,10 +323,11 @@ class NickRadgeCryptoHybrid:
                 paxg_allocation = self.satellite_allocation * (1 - self.weak_bull_satellite_reduction)
 
                 # Core: 70% (unchanged)
-                core_weight = self.core_allocation / len(self.core_assets)
-                for asset in self.core_assets:
-                    if asset in prices.columns:
-                        allocations.loc[date, asset] = core_weight
+                # FIX: Only count core assets that actually exist in the data
+                available_core = [asset for asset in self.core_assets if asset in prices.columns]
+                core_weight = self.core_allocation / len(available_core) if available_core else 0
+                for asset in available_core:
+                    allocations.loc[date, asset] = core_weight
 
                 # Satellite: 15% (reduced from 30%)
                 if self.use_momentum_weighting and current_satellite and satellite_scores:
@@ -349,10 +350,11 @@ class NickRadgeCryptoHybrid:
                 # Full allocation: 70% core + 30% satellite
 
                 # Core: 70% equal-weighted
-                core_weight = self.core_allocation / len(self.core_assets)
-                for asset in self.core_assets:
-                    if asset in prices.columns:
-                        allocations.loc[date, asset] = core_weight
+                # FIX: Only count core assets that actually exist in the data
+                available_core = [asset for asset in self.core_assets if asset in prices.columns]
+                core_weight = self.core_allocation / len(available_core) if available_core else 0
+                for asset in available_core:
+                    allocations.loc[date, asset] = core_weight
 
                 # Satellite: 30% momentum or equal weighted
                 if self.use_momentum_weighting and current_satellite and satellite_scores:
@@ -371,10 +373,11 @@ class NickRadgeCryptoHybrid:
                 reduced_satellite = self.satellite_allocation * self.weak_bull_satellite_reduction
                 paxg_allocation = self.satellite_allocation * (1 - self.weak_bull_satellite_reduction)
 
-                core_weight = self.core_allocation / len(self.core_assets)
-                for asset in self.core_assets:
-                    if asset in prices.columns:
-                        allocations.loc[date, asset] = core_weight
+                # FIX: Only count core assets that actually exist in the data
+                available_core = [asset for asset in self.core_assets if asset in prices.columns]
+                core_weight = self.core_allocation / len(available_core) if available_core else 0
+                for asset in available_core:
+                    allocations.loc[date, asset] = core_weight
 
                 if self.use_momentum_weighting and current_satellite and satellite_scores:
                     total_score = sum(satellite_scores.values())
@@ -491,41 +494,62 @@ class NickRadgeCryptoHybrid:
                 f"   Core assets are required and cannot be auto-downloaded (strategy depends on them)."
             )
 
-        # === FIX: Fill forward/backward BEFORE dropping columns ===
-        # Many crypto assets have partial histories (start mid-backtest)
-        # Fill first, then only drop if still completely NaN
+        # === FIX: Forward-fill ONLY (no backfill = no look-ahead bias) ===
+        # Backfilling uses future prices to populate earlier bars = look-ahead bias!
+        # Zero-fill creates invalid prices (0 close) = explosive returns when real data resumes
 
-        print(f"\n📊 Data Cleaning:")
+        print(f"\n📊 Data Cleaning (No Look-Ahead Bias):")
         initial_nan_count = prices.isna().sum().sum()
         print(f"   Initial NaN values: {initial_nan_count}")
 
-        # Forward fill any remaining NaN values
-        prices = prices.fillna(method='ffill').fillna(method='bfill')
+        # Step 1: Forward fill ONLY (no backfill!)
+        prices = prices.fillna(method='ffill')
 
-        # Ensure no inf values
-        prices = prices.replace([np.inf, -np.inf], np.nan).fillna(method='ffill').fillna(method='bfill')
+        # Step 2: Replace inf with NaN, then forward fill again
+        prices = prices.replace([np.inf, -np.inf], np.nan).fillna(method='ffill')
 
-        # NOW check for columns that are STILL completely NaN after filling
-        # (these are truly unusable, not just partial histories)
-        still_nan_cols = prices.columns[prices.isna().all()].tolist()
-        if still_nan_cols:
-            print(f"   ⚠️  Dropping {len(still_nan_cols)} completely empty columns: {still_nan_cols[:5]}")
-            prices = prices.drop(columns=still_nan_cols)
+        # Step 3: Drop columns that are COMPLETELY empty after forward fill
+        # (these have no data at all, cannot be used)
+        completely_empty = prices.columns[prices.isna().all()].tolist()
+        if completely_empty:
+            print(f"   ⚠️  Dropping {len(completely_empty)} completely empty columns: {completely_empty}")
+            prices = prices.drop(columns=completely_empty)
 
-        # Check for columns with SOME remaining NaN (>10% missing after fill)
+        # Step 4: Check for columns with leading NaNs (start after backtest begins)
+        # These are OK - crypto assets with partial histories
+        # BUT check if >50% is NaN (too sparse to be useful)
+        # CRITICAL: NEVER drop core assets or bear asset (required for strategy logic)
         nan_pct = prices.isna().sum() / len(prices)
-        high_nan_cols = nan_pct[nan_pct > 0.10].index.tolist()
-        if high_nan_cols:
-            print(f"   ⚠️  Dropping {len(high_nan_cols)} columns with >10% NaN after fill: {high_nan_cols[:5]}")
-            prices = prices.drop(columns=high_nan_cols)
+        too_sparse = nan_pct[nan_pct > 0.50].index.tolist()
 
-        # Final pass: fill any remaining scattered NaNs with 0 (last resort)
+        # Protect core assets and bear asset from being dropped
+        required_assets = set(self.core_assets + [self.bear_asset])
+        protected_assets = [col for col in too_sparse if col in required_assets]
+        droppable_sparse = [col for col in too_sparse if col not in required_assets]
+
+        if protected_assets:
+            print(f"   ⚠️  WARNING: {len(protected_assets)} REQUIRED assets have >50% NaN (keeping anyway): {protected_assets}")
+            print(f"      These are core/bear assets - required for strategy logic")
+
+        if droppable_sparse:
+            print(f"   ⚠️  Dropping {len(droppable_sparse)} non-essential columns with >50% NaN: {droppable_sparse[:5]}")
+            prices = prices.drop(columns=droppable_sparse)
+
+        # Step 5: Check for remaining NaNs (should only be leading NaNs now)
         remaining_nans = prices.isna().sum().sum()
         if remaining_nans > 0:
-            print(f"   ⚠️  Filling {remaining_nans} remaining scattered NaNs with forward fill")
-            prices = prices.fillna(method='ffill').fillna(0)
+            # Count columns with leading NaNs (acceptable)
+            cols_with_nans = (prices.isna().sum() > 0).sum()
+            print(f"   ℹ️  {cols_with_nans} columns have leading NaNs (partial histories - OK)")
+            print(f"   ℹ️  {remaining_nans} total NaN values (will not be used in calculations)")
 
-        print(f"   ✅ Final clean: {len(prices.columns)} columns, {len(prices)} rows, 0 NaNs")
+            # Do NOT fill with zeros or backfill!
+            # Strategy will simply not trade these assets until data exists
+            # This is correct behavior - can't trade what didn't exist yet!
+
+        print(f"   ✅ Final clean: {len(prices.columns)} columns, {len(prices)} rows")
+        print(f"   ✅ No look-ahead bias (forward-fill only)")
+        print(f"   ✅ No invalid prices (no zero-fill)")
 
         # Generate allocations
         allocations = self.generate_allocations(prices, btc_prices)
@@ -539,7 +563,11 @@ class NickRadgeCryptoHybrid:
             print("\n⚠️  WARNING: NaN values still present in prices after cleaning")
             nan_summary = prices.isna().sum()
             print(f"   NaN counts: {nan_summary[nan_summary > 0]}")
-            prices = prices.fillna(method='ffill').fillna(0)  # Last resort
+            # Forward fill only, accept remaining NaNs (leading NaNs from partial histories)
+            prices = prices.fillna(method='ffill')
+            remaining = prices.isna().sum().sum()
+            if remaining > 0:
+                print(f"   ℹ️  {remaining} NaN values remain (assets with partial history - won't trade until data exists)")
 
         if allocations.isna().any().any():
             print("\n⚠️  WARNING: NaN values in allocations")
@@ -549,8 +577,11 @@ class NickRadgeCryptoHybrid:
         if (prices <= 0).any().any():
             zero_cols = prices.columns[(prices <= 0).any()].tolist()
             print(f"\n⚠️  WARNING: Zero or negative prices in: {zero_cols}")
-            # Replace zeros with forward fill
-            prices = prices.replace(0, np.nan).fillna(method='ffill').fillna(method='bfill')
+            # Replace zeros with forward fill only (no backfill to avoid look-ahead bias)
+            prices = prices.replace(0, np.nan).fillna(method='ffill')
+            remaining_zeros = (prices <= 0).sum().sum()
+            if remaining_zeros > 0:
+                print(f"   ℹ️  {remaining_zeros} zero/negative values remain (will not be traded)")
 
         print(f"\n📊 Data validation:")
         print(f"   Prices shape: {prices.shape}")
