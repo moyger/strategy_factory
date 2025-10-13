@@ -411,7 +411,7 @@ def get_qualifier(qualifier_type: str, **kwargs) -> PerformanceQualifier:
     Get performance qualifier by type
 
     Args:
-        qualifier_type: One of 'anm', 'bss', 'vem', 'tqs', 'ram', 'composite', 'roc'
+        qualifier_type: One of 'anm', 'bss', 'vem', 'tqs', 'ram', 'composite', 'roc', 'ml_rf'
         **kwargs: Additional parameters for qualifier
 
     Returns:
@@ -438,8 +438,13 @@ def get_qualifier(qualifier_type: str, **kwargs) -> PerformanceQualifier:
 
         return ROCQualifier(**kwargs)
 
+    if qualifier_type == 'ml_rf':
+        # ML-based qualifier (imported on demand to avoid requiring sklearn for basic usage)
+        from strategy_factory.ml_qualifiers import MLQualifier
+        return MLQualifier(**kwargs)
+
     if qualifier_type not in qualifiers:
-        raise ValueError(f"Unknown qualifier: {qualifier_type}. Choose from {list(qualifiers.keys())} or 'roc'")
+        raise ValueError(f"Unknown qualifier: {qualifier_type}. Choose from {list(qualifiers.keys())}, 'roc', or 'ml_rf'")
 
     return qualifiers[qualifier_type](**kwargs)
 
