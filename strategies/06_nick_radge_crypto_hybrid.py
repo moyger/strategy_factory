@@ -1,0 +1,516 @@
+#!/usr/bin/env python3
+"""
+Nick Radge Crypto Hybrid Strategy - Core/Satellite Approach
+
+Combines fixed core + dynamic satellite:
+- Core (70%): Fixed BTC, ETH, SOL - NEVER rebalanced
+- Satellite (30%): Top 5-7 alts from top 50 - Quarterly rebalanced using TQS/ML
+
+WHY THIS APPROACH:
+- Research showed pure dynamic selection underperforms fixed universe by 25×
+- Pure fixed: +913% (winner)
+- Pure dynamic: +35% (massive failure)
+- Hybrid: Target +600-800% (70% captures fixed benefit, 30% adds alpha)
+
+KEY INSIGHT from research (results/crypto/UNIVERSE_SELECTION_CRITERIA_ANALYSIS.md):
+- BTC/ETH dominance persists for YEARS (not quarters like stock sectors)
+- Quarterly rebalancing creates forced turnover with no edge
+- Fixed universe captures winner-take-all network effects
+- BUT: Alt-seasons offer opportunities (when alts outperform BTC)
+
+STRATEGY:
+- Core: Lock in BTC/ETH/SOL dominance (never force sell winners)
+- Satellite: Capture alt-season alpha with TQS/ML selection
+- Regime Filter: BTC 200MA/100MA (exit to PAXG during BEAR)
+- Rebalancing: Quarterly for satellite only (core never rebalances)
+
+Author: Strategy Factory
+Date: 2025-01-13
+"""
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import pandas as pd
+import numpy as np
+import vectorbt as vbt
+from typing import Dict, Optional
+import warnings
+warnings.filterwarnings('ignore')
+
+from strategy_factory.performance_qualifiers import get_qualifier
+
+
+class NickRadgeCryptoHybrid:
+    """
+    Hybrid Core/Satellite Crypto Momentum Strategy
+
+    Portfolio Structure:
+    - 70% Core: BTC (23.3%), ETH (23.3%), SOL (23.3%) - Fixed, no rebalancing
+    - 30% Satellite: Top 5 alts from top 50 (6% each) - Quarterly rebalancing with TQS/ML
+
+    Regime-Based Adjustments:
+    - STRONG_BULL (BTC > 200MA & > 100MA): 100% invested (70% core + 30% satellite)
+    - WEAK_BULL (BTC > 200MA but < 100MA): 85% invested (70% core + 15% satellite + 15% PAXG)
+    - BEAR (BTC < 200MA): 0% crypto (100% PAXG)
+    """
+
+    def __init__(self,
+                 core_allocation: float = 0.70,
+                 satellite_allocation: float = 0.30,
+                 core_assets: list = None,
+                 satellite_size: int = 5,
+                 qualifier_type: str = 'tqs',
+                 ma_period: int = 100,
+                 rebalance_freq: str = 'QS',
+                 use_momentum_weighting: bool = True,
+                 regime_ma_long: int = 200,
+                 regime_ma_short: int = 100,
+                 bear_asset: str = 'PAXG-USD',
+                 weak_bull_satellite_reduction: float = 0.50,
+                 qualifier_params: Optional[Dict] = None):
+        """
+        Initialize Hybrid Crypto Strategy
+
+        Args:
+            core_allocation: Allocation to fixed core (default: 0.70 = 70%)
+            satellite_allocation: Allocation to dynamic satellite (default: 0.30 = 30%)
+            core_assets: List of core crypto tickers (default: ['BTC-USD', 'ETH-USD', 'SOL-USD'])
+            satellite_size: Number of alts in satellite (default: 5)
+            qualifier_type: Ranking method for satellite - 'tqs', 'ml_xgb', 'hybrid'
+            ma_period: Moving average trend filter (default: 100)
+            rebalance_freq: Rebalancing frequency ('QS' = quarterly)
+            use_momentum_weighting: Weight satellite by momentum strength
+            regime_ma_long: Long-term MA for regime (200 days)
+            regime_ma_short: Short-term MA for regime (100 days for crypto, not 50 like stocks)
+            bear_asset: Asset for bear market (default: 'PAXG-USD' - tokenized gold)
+            weak_bull_satellite_reduction: Reduce satellite by this % in WEAK_BULL (default: 0.50 = 50%)
+            qualifier_params: Additional parameters for qualifier
+        """
+        self.core_allocation = core_allocation
+        self.satellite_allocation = satellite_allocation
+        self.core_assets = core_assets or ['BTC-USD', 'ETH-USD', 'SOL-USD']
+        self.satellite_size = satellite_size
+        self.qualifier_type = qualifier_type
+        self.ma_period = ma_period
+        self.rebalance_freq = rebalance_freq
+        self.use_momentum_weighting = use_momentum_weighting
+        self.regime_ma_long = regime_ma_long
+        self.regime_ma_short = regime_ma_short
+        self.bear_asset = bear_asset
+        self.weak_bull_satellite_reduction = weak_bull_satellite_reduction
+
+        # Initialize qualifier for satellite selection
+        params = qualifier_params or {}
+        self.qualifier = get_qualifier(qualifier_type, **params)
+
+        self.name = f"CryptoHybrid_{qualifier_type.upper()}_Core{int(core_allocation*100)}_Sat{int(satellite_allocation*100)}"
+
+    def calculate_regime(self, btc_prices: pd.Series) -> pd.Series:
+        """
+        Calculate 3-tier market regime based on BTC
+
+        IMPORTANT: Uses BTC as regime filter, not SPY (crypto-specific)
+
+        Regimes:
+        - STRONG_BULL: BTC > 200-day MA AND BTC > 100-day MA
+        - WEAK_BULL: BTC > 200-day MA BUT BTC < 100-day MA
+        - BEAR: BTC < 200-day MA
+
+        Args:
+            btc_prices: BTC-USD close prices
+
+        Returns:
+            Series with regime classification
+        """
+        # Lag MAs by 1 day to prevent look-ahead bias
+        ma_long = btc_prices.rolling(window=self.regime_ma_long).mean().shift(1)
+        ma_short = btc_prices.rolling(window=self.regime_ma_short).mean().shift(1)
+        prices_lagged = btc_prices.shift(1)
+
+        regime = pd.Series('UNKNOWN', index=btc_prices.index)
+
+        # Classification using lagged data
+        regime[(prices_lagged > ma_long) & (prices_lagged > ma_short)] = 'STRONG_BULL'
+        regime[(prices_lagged > ma_long) & (prices_lagged <= ma_short)] = 'WEAK_BULL'
+        regime[prices_lagged <= ma_long] = 'BEAR'
+
+        return regime
+
+    def calculate_indicators(self, prices: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        """
+        Calculate indicators for satellite selection
+
+        Uses qualifier (TQS, ml_xgb, etc.) for ranking
+
+        Args:
+            prices: DataFrame with crypto prices (columns = tickers)
+
+        Returns:
+            Dictionary with indicator DataFrames
+        """
+        # Calculate qualifier scores for satellite candidates
+        scores = self.qualifier.calculate(prices).shift(1)
+
+        # Moving Average filter
+        ma = prices.rolling(window=self.ma_period).mean().shift(1)
+        above_ma = (prices.shift(1) > ma)
+
+        return {
+            'scores': scores,
+            'ma': ma,
+            'above_ma': above_ma
+        }
+
+    def select_satellite(self,
+                        prices: pd.DataFrame,
+                        indicators: Dict[str, pd.DataFrame],
+                        date: pd.Timestamp) -> pd.DataFrame:
+        """
+        Select top N alts for satellite portfolio
+
+        Filters:
+        1. Exclude core assets (BTC, ETH, SOL)
+        2. Exclude bear asset (PAXG)
+        3. Above MA filter
+        4. Valid scores
+        5. Top N by qualifier score
+
+        Args:
+            prices: Crypto prices DataFrame
+            indicators: Dictionary of indicators
+            date: Date to select for
+
+        Returns:
+            DataFrame with selected alts and scores
+        """
+        if date not in prices.index:
+            return pd.DataFrame()
+
+        scores = indicators['scores'].loc[date]
+        above_ma = indicators['above_ma'].loc[date]
+
+        # Filter: Above MA and valid scores
+        valid_cryptos = above_ma[above_ma == True].index
+
+        # Exclude core assets and bear asset from satellite
+        exclude = set(self.core_assets + [self.bear_asset])
+        valid_cryptos = [c for c in valid_cryptos if c not in exclude and pd.notna(scores[c])]
+
+        if len(valid_cryptos) == 0:
+            return pd.DataFrame()
+
+        # Get scores for valid cryptos
+        scores_valid = scores[valid_cryptos].dropna()
+
+        if len(scores_valid) == 0:
+            return pd.DataFrame()
+
+        # Sort by score and take top N
+        ranked = scores_valid.sort_values(ascending=False).head(self.satellite_size)
+
+        return pd.DataFrame({
+            'ticker': ranked.index,
+            'score': ranked.values
+        })
+
+    def generate_allocations(self,
+                           prices: pd.DataFrame,
+                           btc_prices: Optional[pd.Series] = None) -> pd.DataFrame:
+        """
+        Generate hybrid portfolio allocations over time
+
+        Portfolio Structure:
+        - Core (70%): BTC, ETH, SOL - equal weighted, never rebalanced
+        - Satellite (30%): Top 5 alts - momentum weighted, quarterly rebalanced
+
+        Regime Adjustments:
+        - STRONG_BULL: 100% invested (70% core + 30% satellite)
+        - WEAK_BULL: 85% invested (70% core + 15% satellite + 15% PAXG)
+        - BEAR: 0% crypto (100% PAXG)
+
+        Args:
+            prices: DataFrame with crypto prices (columns = tickers)
+            btc_prices: BTC prices for regime filter (required)
+
+        Returns:
+            DataFrame with target allocations (rows = dates, cols = tickers)
+        """
+        if btc_prices is None:
+            raise ValueError("btc_prices required for regime filter")
+
+        # Calculate regime
+        regime = self.calculate_regime(btc_prices)
+
+        # Calculate indicators for satellite selection
+        # Filter out core assets and bear asset from indicator calculation
+        satellite_universe = [c for c in prices.columns
+                             if c not in self.core_assets and c != self.bear_asset]
+        satellite_prices = prices[satellite_universe]
+        indicators = self.calculate_indicators(satellite_prices)
+
+        # Get rebalance dates (quarterly)
+        rebalance_dates = pd.date_range(
+            start=prices.index[0],
+            end=prices.index[-1],
+            freq=self.rebalance_freq
+        )
+
+        # Find nearest trading dates
+        actual_rebalance_dates = []
+        for target_date in rebalance_dates:
+            nearest_dates = prices.index[prices.index >= target_date]
+            if len(nearest_dates) > 0:
+                actual_rebalance_dates.append(nearest_dates[0])
+
+        # Initialize allocations DataFrame
+        allocations = pd.DataFrame(0.0, index=prices.index, columns=prices.columns)
+
+        # Track current satellite holdings
+        current_satellite = []
+
+        print(f"\n📊 Generating Hybrid Allocations...")
+        print(f"   Core: {len(self.core_assets)} assets ({self.core_allocation:.0%})")
+        print(f"   Satellite: {self.satellite_size} assets ({self.satellite_allocation:.0%})")
+        print(f"   Rebalances: {len(actual_rebalance_dates)}")
+
+        for i, date in enumerate(prices.index):
+            current_regime = regime.loc[date]
+
+            # Rebalance satellite on rebalance dates
+            if date in actual_rebalance_dates:
+                selected = self.select_satellite(satellite_prices, indicators, date)
+                if len(selected) > 0:
+                    current_satellite = selected['ticker'].tolist()
+                    satellite_scores = dict(zip(selected['ticker'], selected['score']))
+                else:
+                    current_satellite = []
+                    satellite_scores = {}
+
+            # Apply regime-based allocation
+            if current_regime == 'BEAR':
+                # 100% PAXG during bear market
+                allocations.loc[date, self.bear_asset] = 1.0
+
+            elif current_regime == 'WEAK_BULL':
+                # Reduce satellite allocation by 50%, allocate to PAXG
+                reduced_satellite = self.satellite_allocation * self.weak_bull_satellite_reduction
+                paxg_allocation = self.satellite_allocation * (1 - self.weak_bull_satellite_reduction)
+
+                # Core: 70% (unchanged)
+                core_weight = self.core_allocation / len(self.core_assets)
+                for asset in self.core_assets:
+                    if asset in prices.columns:
+                        allocations.loc[date, asset] = core_weight
+
+                # Satellite: 15% (reduced from 30%)
+                if self.use_momentum_weighting and current_satellite and satellite_scores:
+                    # Momentum-weighted
+                    total_score = sum(satellite_scores.values())
+                    if total_score > 0:
+                        for ticker in current_satellite:
+                            weight = (satellite_scores[ticker] / total_score) * reduced_satellite
+                            allocations.loc[date, ticker] = weight
+                else:
+                    # Equal-weighted
+                    sat_weight = reduced_satellite / len(current_satellite) if current_satellite else 0
+                    for ticker in current_satellite:
+                        allocations.loc[date, ticker] = sat_weight
+
+                # PAXG: 15%
+                allocations.loc[date, self.bear_asset] = paxg_allocation
+
+            elif current_regime == 'STRONG_BULL':
+                # Full allocation: 70% core + 30% satellite
+
+                # Core: 70% equal-weighted
+                core_weight = self.core_allocation / len(self.core_assets)
+                for asset in self.core_assets:
+                    if asset in prices.columns:
+                        allocations.loc[date, asset] = core_weight
+
+                # Satellite: 30% momentum or equal weighted
+                if self.use_momentum_weighting and current_satellite and satellite_scores:
+                    total_score = sum(satellite_scores.values())
+                    if total_score > 0:
+                        for ticker in current_satellite:
+                            weight = (satellite_scores[ticker] / total_score) * self.satellite_allocation
+                            allocations.loc[date, ticker] = weight
+                else:
+                    sat_weight = self.satellite_allocation / len(current_satellite) if current_satellite else 0
+                    for ticker in current_satellite:
+                        allocations.loc[date, ticker] = sat_weight
+
+            # UNKNOWN regime: Same as WEAK_BULL (cautious)
+            else:
+                reduced_satellite = self.satellite_allocation * self.weak_bull_satellite_reduction
+                paxg_allocation = self.satellite_allocation * (1 - self.weak_bull_satellite_reduction)
+
+                core_weight = self.core_allocation / len(self.core_assets)
+                for asset in self.core_assets:
+                    if asset in prices.columns:
+                        allocations.loc[date, asset] = core_weight
+
+                if self.use_momentum_weighting and current_satellite and satellite_scores:
+                    total_score = sum(satellite_scores.values())
+                    if total_score > 0:
+                        for ticker in current_satellite:
+                            weight = (satellite_scores[ticker] / total_score) * reduced_satellite
+                            allocations.loc[date, ticker] = weight
+                else:
+                    sat_weight = reduced_satellite / len(current_satellite) if current_satellite else 0
+                    for ticker in current_satellite:
+                        allocations.loc[date, ticker] = sat_weight
+
+                allocations.loc[date, self.bear_asset] = paxg_allocation
+
+        # Normalize to ensure weights sum to 1.0
+        row_sums = allocations.sum(axis=1)
+        allocations = allocations.div(row_sums, axis=0).fillna(0.0)
+
+        # Regime summary
+        regime_counts = regime.value_counts()
+        print(f"\n   Market Regime Summary:")
+        for reg, count in regime_counts.items():
+            pct = count / len(regime) * 100
+            print(f"   - {reg}: {count} days ({pct:.1f}%)")
+
+        return allocations
+
+    def backtest(self,
+                prices: pd.DataFrame,
+                btc_prices: Optional[pd.Series] = None,
+                initial_capital: float = 100000,
+                fees: float = 0.001,
+                slippage: float = 0.0005) -> vbt.Portfolio:
+        """
+        Backtest hybrid strategy using vectorbt
+
+        Args:
+            prices: DataFrame with crypto prices
+            btc_prices: BTC prices for regime filter (required)
+            initial_capital: Starting capital
+            fees: Trading fees (0.001 = 0.1%)
+            slippage: Slippage (0.0005 = 0.05%)
+
+        Returns:
+            vectorbt Portfolio object
+        """
+        print("="*80)
+        print(f"🚀 Backtesting {self.name}")
+        print("="*80)
+        print(f"\n📊 Strategy Configuration:")
+        print(f"   Core Assets: {', '.join(self.core_assets)} ({self.core_allocation:.0%})")
+        print(f"   Satellite Size: {self.satellite_size} alts ({self.satellite_allocation:.0%})")
+        print(f"   Qualifier: {self.qualifier_type.upper()}")
+        print(f"   Rebalance: {self.rebalance_freq}")
+        print(f"   Bear Asset: {self.bear_asset}")
+        print(f"   Initial Capital: ${initial_capital:,.0f}")
+
+        # Validate data - remove columns with any NaN values
+        nan_cols = prices.columns[prices.isna().any()].tolist()
+        if nan_cols:
+            print(f"\n⚠️  Removing {len(nan_cols)} tickers with NaN values: {nan_cols[:5]}...")
+            prices = prices.drop(columns=nan_cols)
+
+        # Forward fill any remaining NaN values
+        prices = prices.fillna(method='ffill').fillna(method='bfill')
+
+        # Ensure no inf values
+        prices = prices.replace([np.inf, -np.inf], np.nan).fillna(method='ffill').fillna(method='bfill')
+
+        # Generate allocations
+        allocations = self.generate_allocations(prices, btc_prices)
+
+        # Ensure allocations and prices have same columns
+        # Remove any allocations for tickers not in prices
+        allocations = allocations[prices.columns]
+
+        # Verify no NaN or Inf in either DataFrame
+        if prices.isna().any().any():
+            print("\n⚠️  WARNING: NaN values still present in prices after cleaning")
+            nan_summary = prices.isna().sum()
+            print(f"   NaN counts: {nan_summary[nan_summary > 0]}")
+            prices = prices.fillna(method='ffill').fillna(0)  # Last resort
+
+        if allocations.isna().any().any():
+            print("\n⚠️  WARNING: NaN values in allocations")
+            allocations = allocations.fillna(0)
+
+        # Debug: Check for invalid values
+        if (prices <= 0).any().any():
+            zero_cols = prices.columns[(prices <= 0).any()].tolist()
+            print(f"\n⚠️  WARNING: Zero or negative prices in: {zero_cols}")
+            # Replace zeros with forward fill
+            prices = prices.replace(0, np.nan).fillna(method='ffill').fillna(method='bfill')
+
+        print(f"\n📊 Data validation:")
+        print(f"   Prices shape: {prices.shape}")
+        print(f"   Allocations shape: {allocations.shape}")
+        print(f"   Price range: {prices.min().min():.2f} to {prices.max().max():.2f}")
+        print(f"   Any NaN in prices: {prices.isna().any().any()}")
+        print(f"   Any NaN in allocations: {allocations.isna().any().any()}")
+
+        # Create portfolio using vectorbt with target percent sizing
+        portfolio = vbt.Portfolio.from_orders(
+            close=prices,
+            size=allocations,
+            size_type='targetpercent',
+            fees=fees,
+            slippage=slippage,
+            init_cash=initial_capital,
+            cash_sharing=True,  # Share cash across all assets
+            group_by=True,  # Treat as single portfolio
+            call_seq='auto',  # Optimize order execution
+            freq='D'
+        )
+
+        print(f"\n✅ Backtest Complete!")
+        print(f"   Final Value: ${portfolio.value().iloc[-1]:,.2f}")
+        print(f"   Total Return: {(portfolio.total_return() - 1) * 100:.2f}%")
+
+        return portfolio
+
+    def print_results(self, portfolio: vbt.Portfolio, prices: pd.DataFrame):
+        """Print backtest results"""
+        print("\n" + "="*80)
+        print("HYBRID CRYPTO STRATEGY - BACKTEST RESULTS")
+        print("="*80)
+
+        print(f"\n📊 Strategy: {self.name}")
+        print(f"   Core: {self.core_allocation:.0%} ({', '.join(self.core_assets)})")
+        print(f"   Satellite: {self.satellite_allocation:.0%} (Top {self.satellite_size} alts)")
+        print(f"   Period: {prices.index[0].date()} to {prices.index[-1].date()}")
+
+        total_return = (portfolio.total_return() - 1) * 100 if callable(portfolio.total_return) else (portfolio.total_return - 1) * 100
+        sharpe = portfolio.sharpe_ratio(freq='D') if callable(portfolio.sharpe_ratio) else portfolio.sharpe_ratio
+        max_dd = portfolio.max_drawdown() * 100 if callable(portfolio.max_drawdown) else portfolio.max_drawdown * 100
+
+        print(f"\n📈 Performance:")
+        print(f"   Total Return: {total_return:.2f}%")
+        print(f"   Final Equity: ${portfolio.value().iloc[-1]:,.2f}")
+        print(f"   Sharpe Ratio: {sharpe:.2f}")
+        print(f"   Max Drawdown: {max_dd:.2f}%")
+
+        print("\n" + "="*80)
+
+
+if __name__ == "__main__":
+    print("="*80)
+    print("HYBRID CRYPTO STRATEGY - CORE/SATELLITE APPROACH")
+    print("="*80)
+    print()
+    print("🎯 Strategy Concept:")
+    print("   70% Core (Fixed): BTC, ETH, SOL - Never rebalanced")
+    print("   30% Satellite (Dynamic): Top 5 alts - Quarterly rebalanced with TQS/ML")
+    print()
+    print("📊 Why Hybrid?")
+    print("   - Research: Pure dynamic underperforms fixed universe by 25×")
+    print("   - Core captures BTC/ETH dominance (persistent winners)")
+    print("   - Satellite captures alt-season opportunities")
+    print("   - Reduces forced turnover on core holdings")
+    print()
+    print("✅ To test:")
+    print("   python examples/test_crypto_hybrid_strategy.py")
+    print("="*80)

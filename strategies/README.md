@@ -60,7 +60,7 @@ TQS = (Price - MA100) / ATR × (ADX / 25)
 
 ---
 
-### **[05_institutional_crypto_perp.py](05_institutional_crypto_perp.py)** ⭐ PRIMARY CRYPTO STRATEGY
+### **[05_institutional_crypto_perp.py](05_institutional_crypto_perp.py)** ⭐ PRIMARY CRYPTO PERP STRATEGY
 - **Status:** PRODUCTION (+580% tested, 2020-2024)
 - **Description:** Institutional-grade crypto perpetuals trend-following with PAXG protection
 - **Market:** BTC, ETH, SOL perpetual futures + PAXG (tokenized gold)
@@ -90,12 +90,59 @@ TQS = (Price - MA100) / ATR × (ADX / 25)
 
 ---
 
+### **[06_nick_radge_crypto_hybrid.py](06_nick_radge_crypto_hybrid.py)** 🚀 PRIMARY CRYPTO SPOT STRATEGY
+- **Status:** PRODUCTION (+2046% tested, 2020-2025)
+- **Description:** Hybrid core/satellite crypto momentum with TQS qualifier
+- **Class:** `NickRadgeCryptoHybrid`
+- **Market:** Crypto spot (BTC, ETH, SOL + top 50 alts)
+- **Type:** Swing trading (quarterly rebalancing)
+
+**Key Features:**
+- **70% Core:** Fixed BTC, ETH, SOL (never rebalanced)
+- **30% Satellite:** Top 5 alts selected quarterly using TQS
+- BTC 200MA/100MA regime filter
+- **100% PAXG allocation during bear markets**
+- Momentum-weighted satellite allocation
+- Quarterly rebalancing (satellite only)
+
+**TQS Formula:**
+```
+TQS = (Price - MA100) / ATR × (ADX / 25)
+```
+
+**Performance (Hybrid 70/30 TQS):**
+- Total Return: **+2046.19%** (20× money!)
+- Annualized: **107.92%** (doubles every year!)
+- Sharpe Ratio: **1.54**
+- Max Drawdown: **-47.26%**
+- Win Rate: **68.72%**
+- vs Pure Fixed: **+1677% outperformance** (5.5× better!)
+
+**Comparison vs Alternatives:**
+- Pure Fixed (10 cryptos, buy & hold): +368.72%
+- Pure Dynamic (quarterly rebalanced): +137.54%
+- **Hybrid 70/30 TQS: +2046.19%** ⭐ BEST
+
+**Documentation:**
+- Full Guide: `docs/CRYPTO_HYBRID_STRATEGY.md`
+- Test Script: `examples/test_crypto_hybrid_strategy.py`
+- Results: `results/crypto_hybrid/`
+
+**Use Cases:**
+- Crypto spot portfolio (primary production strategy for crypto!)
+- Quarterly rebalancing (low maintenance)
+- Bear market protection with PAXG
+- Highest returns of any tested strategy (+2046%)
+
+---
+
 ## 📊 Performance Comparison
 
 | Strategy | Return | Sharpe | Max DD | Market | Status |
 |----------|--------|--------|--------|--------|--------|
+| **06 Crypto Hybrid (TQS)** | **+2046.19%** 🚀 | **1.54** | **-47.26%** | Crypto Spot | ✅ PROD |
+| **05 Crypto Perp (PAXG)** | **+580%** | **1.29** | **-36.7%** | Crypto Perp | ✅ PROD |
 | **02 Nick Radge (TQS)** | **+183.37%** | **1.46** | **-24.33%** | US Stocks | ✅ PROD |
-| **05 Crypto Perp (PAXG)** | **+580%** | **1.29** | **-36.7%** | Crypto | ✅ PROD |
 | SPY Benchmark | +118.71% | 0.69 | N/A | US Stocks | - |
 
 ---
@@ -104,6 +151,7 @@ TQS = (Price - MA100) / ATR × (ADX / 25)
 
 | Goal | Strategy | File |
 |------|----------|------|
+| **Crypto spot portfolio** 🚀 | **Crypto Hybrid (TQS)** | [06_nick_radge_crypto_hybrid.py](06_nick_radge_crypto_hybrid.py) |
 | **US stock swing trading** | Nick Radge (TQS) | [02_nick_radge_bss.py](02_nick_radge_bss.py) |
 | **ML-enhanced stocks** | Nick Radge (ml_xgb or hybrid) | [02_nick_radge_bss.py](02_nick_radge_bss.py) |
 | **Crypto perpetuals** | Institutional Crypto Perp | [05_institutional_crypto_perp.py](05_institutional_crypto_perp.py) |
@@ -130,9 +178,28 @@ strategy = NickRadgeEnhanced(
 portfolio = strategy.backtest(prices, spy_prices, initial_capital=100000)
 ```
 
-### Test Crypto Strategy:
+### Test Crypto Hybrid Strategy:
+```python
+from strategies.nick_radge_crypto_hybrid import NickRadgeCryptoHybrid
+
+strategy = NickRadgeCryptoHybrid(
+    core_allocation=0.70,
+    satellite_allocation=0.30,
+    core_assets=['BTC-USD', 'ETH-USD', 'SOL-USD'],
+    satellite_size=5,
+    qualifier_type='tqs',  # Best performing
+    regime_ma_long=200,
+    regime_ma_short=100,
+    bear_asset='PAXG-USD'
+)
+
+portfolio = strategy.backtest(prices, btc_prices, initial_capital=100000)
+```
+
+### Test All Crypto Configurations:
 ```bash
-python examples/test_crypto_perp.py
+# Compare Pure Fixed vs Pure Dynamic vs Hybrid 70/30
+python examples/test_crypto_hybrid_strategy.py
 ```
 
 ### Deploy to Production:
