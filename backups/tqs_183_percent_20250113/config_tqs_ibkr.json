@@ -1,0 +1,164 @@
+{
+  "strategy": "nick_radge_tqs",
+  "description": "Nick Radge Momentum with TQS (Trend Quality Score) - Best Performer",
+  "version": "1.0",
+  "status": "paper_trading",
+
+  "_comment_performance": "Backtest Performance (2020-2025)",
+  "backtest_results": {
+    "period": "2020-01-01 to 2025-01-31",
+    "total_return_pct": 183.37,
+    "annualized_return_pct": 23.47,
+    "sharpe_ratio": 1.46,
+    "max_drawdown_pct": -24.33,
+    "win_rate_pct": 51.03,
+    "spy_return_pct": 118.71,
+    "outperformance_pct": 64.66,
+    "note": "TQS outperforms BSS by +15.87% with better Sharpe (1.46 vs 1.33)"
+  },
+
+  "_comment_strategy_params": "Core strategy parameters",
+  "qualifier_type": "tqs",
+  "portfolio_size": 7,
+  "ma_period": 100,
+  "atr_period": 14,
+  "adx_period": 14,
+  "rebalance_frequency": "quarterly",
+  "rebalance_months": [1, 4, 7, 10],
+  "rebalance_day": 1,
+  "rebalance_time": "10:00",
+
+  "_comment_universe": "Top 100 liquid S&P 500 stocks",
+  "num_stocks": 100,
+  "universe_note": "Dynamically ranked each quarter by TQS score",
+
+  "_comment_regime": "3-tier regime based on SPY moving averages",
+  "use_regime_filter": true,
+  "regime_indicator": "SPY",
+  "regime_ma_long": 200,
+  "regime_ma_short": 50,
+  "strong_bull_positions": 7,
+  "weak_bull_positions": 3,
+  "bear_positions": 0,
+
+  "_comment_bear_protection": "GLD allocation during BEAR regime",
+  "bear_market_asset": "GLD",
+  "bear_allocation": 1.0,
+  "_comment_bear_note": "When SPY < 200-day MA, exit all stocks and allocate 100% to GLD",
+
+  "_comment_position_sizing": "Portfolio weighting method",
+  "use_momentum_weighting": true,
+  "_comment_weighting": "Stronger TQS scores get higher allocation",
+
+  "_comment_filters": "Additional quality filters",
+  "use_relative_strength": true,
+  "_comment_relative_strength": "Only buy stocks with TQS > SPY TQS",
+
+  "_comment_risk_management": "Risk controls",
+  "max_position_size": 0.25,
+  "_comment_max_position": "No single position > 25% of portfolio (concentration limit)",
+  "target_volatility": 0.20,
+  "_comment_target_vol": "Portfolio volatility targeting (20% annual)",
+  "vol_lookback": 20,
+  "_comment_vol_lookback": "20-day realized vol estimate for scaling",
+  "vol_scalar_min": 0.0,
+  "vol_scalar_max": 2.0,
+  "_comment_vol_scalar": "Vol scalar clipped to [0.0, 2.0] range",
+
+  "_comment_execution": "Trade execution parameters",
+  "dry_run": true,
+  "_comment_dry_run": "ALWAYS start with dry_run = true. Set to false only after paper trading validation",
+  "broker": "interactive_brokers",
+  "ibkr_host": "127.0.0.1",
+  "ibkr_port": 7496,
+  "_comment_ibkr_port": "7496 = Paper trading, 7497 = Live trading",
+  "ibkr_client_id": 1,
+  "order_type": "market",
+  "min_position_value": 100,
+  "_comment_min_position": "Don't trade positions < $100",
+  "max_slippage_pct": 0.01,
+  "_comment_max_slippage": "Cancel if price moves > 1%",
+
+  "_comment_logging": "Monitoring and alerts",
+  "log_level": "INFO",
+  "log_file": "output/live_tqs_trading.log",
+  "trade_log_file": "output/live_tqs_trades.csv",
+  "enable_telegram_alerts": false,
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+
+  "_comment_expected_live": "Expected live trading performance",
+  "expected_live_performance": {
+    "annualized_return_pct": "20-25",
+    "sharpe_ratio": "1.3-1.5",
+    "max_drawdown_pct": "-25 to -30",
+    "note": "Accounting for slippage and real-world execution"
+  },
+
+  "_comment_deployment_phases": "Recommended deployment timeline",
+  "deployment_phases": [
+    {
+      "phase": 1,
+      "name": "Paper Trading",
+      "duration_weeks": 4,
+      "capital": 0,
+      "dry_run": true,
+      "goal": "Verify TQS execution and GLD switching logic"
+    },
+    {
+      "phase": 2,
+      "name": "Small Capital Testing",
+      "duration_weeks": 12,
+      "capital_pct": "10-20",
+      "dry_run": false,
+      "goal": "Validate real-world performance"
+    },
+    {
+      "phase": 3,
+      "name": "Full Deployment",
+      "duration_weeks": "ongoing",
+      "capital_pct": 100,
+      "dry_run": false,
+      "goal": "Scale to full capital"
+    }
+  ],
+
+  "_comment_monitoring": "Key metrics to monitor",
+  "monitoring_checklist": [
+    "Daily: Check for execution errors",
+    "Daily: Verify GLD allocation during BEAR regime",
+    "Daily: Check regime changes (BULL ↔ BEAR)",
+    "Weekly: Review performance vs SPY",
+    "Weekly: Verify volatility targeting is working",
+    "Monthly: Check if within expected volatility bounds (20% target)",
+    "Quarterly: Full rebalancing execution review",
+    "Quarterly: Compare actual vs expected returns",
+    "Quarterly: Verify TQS rankings are reasonable"
+  ],
+
+  "_comment_kill_switches": "When to stop trading",
+  "kill_switch_triggers": [
+    "Drawdown exceeds 40%",
+    "3 consecutive quarterly losses",
+    "Annual return < -25%",
+    "Execution errors >5% of trades",
+    "Unexpected behavior (logic errors)",
+    "Vol targeting fails (portfolio vol > 30%)",
+    "Regime detection errors (SPY data issues)"
+  ],
+
+  "_comment_tqs_explanation": "What is TQS?",
+  "tqs_formula": "TQS = (Price - MA100) / ATR × (ADX / 25)",
+  "tqs_components": {
+    "breakout_strength": "(Price - MA100) / ATR",
+    "trend_quality": "ADX / 25",
+    "interpretation": "Higher TQS = Stronger breakout + Higher trend quality"
+  },
+  "tqs_advantages": [
+    "Combines trend strength (breakout) + trend quality (ADX)",
+    "Filters out choppy/sideways markets (low ADX)",
+    "Better Sharpe ratio than BSS (1.46 vs 1.33)",
+    "Lower drawdown than BSS (-24.33% vs -26.72%)",
+    "More consistent returns across market conditions"
+  ]
+}
