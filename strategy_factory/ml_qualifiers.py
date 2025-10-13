@@ -78,7 +78,8 @@ class MLQualifier:
         self.trained_dates = []
 
     def engineer_features(self, prices: pd.DataFrame, spy_prices: Optional[pd.Series] = None,
-                         volumes: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+                         volumes: Optional[pd.DataFrame] = None,
+                         sector_prices: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         """
         Engineer technical features for ML model
 
@@ -88,6 +89,7 @@ class MLQualifier:
             prices: DataFrame with stock prices (columns = tickers)
             spy_prices: SPY prices for relative strength (optional)
             volumes: DataFrame with volume data (optional, same structure as prices)
+            sector_prices: DataFrame with sector ETF prices (optional, columns = sector tickers like XLK, XLF, etc.)
 
         Returns:
             DataFrame with engineered features (rows = dates, cols = tickers × features)
@@ -195,6 +197,19 @@ class MLQualifier:
                 relative_strength_20 = pd.Series(0, index=price.index)
                 relative_strength_50 = pd.Series(0, index=price.index)
 
+            # 7. SECTOR MOMENTUM (9 sector ETFs)
+            sector_momentum_dict = {}
+            if sector_prices is not None and len(sector_prices.columns) > 0:
+                # Calculate 20-day ROC for each sector
+                for sector in sector_prices.columns:
+                    sector_roc = sector_prices[sector].pct_change(20).shift(1)
+                    # Store relative strength vs sector
+                    sector_momentum_dict[f'{ticker}_vs_{sector}'] = (roc_20 - sector_roc).shift(1)
+            # If no sector data, create 9 placeholder features filled with zeros
+            if not sector_momentum_dict:
+                for sector in ['XLK', 'XLF', 'XLE', 'XLV', 'XLP', 'XLY', 'XLI', 'XLB', 'XLU']:
+                    sector_momentum_dict[f'{ticker}_vs_{sector}'] = pd.Series(0, index=price.index)
+
             # Combine features into DataFrame
             ticker_features = pd.DataFrame({
                 # Momentum (7 features)
@@ -227,6 +242,8 @@ class MLQualifier:
                 # Relative Strength (2 features)
                 f'{ticker}_rel_strength_20': relative_strength_20,
                 f'{ticker}_rel_strength_50': relative_strength_50,
+                # Sector Momentum (9 features) - Spread to dict
+                **sector_momentum_dict
             })
 
             features_list.append(ticker_features)
@@ -339,7 +356,8 @@ class MLQualifier:
         return model
 
     def calculate(self, prices: pd.DataFrame, spy_prices: Optional[pd.Series] = None,
-                  volumes: Optional[pd.DataFrame] = None, **kwargs) -> pd.DataFrame:
+                  volumes: Optional[pd.DataFrame] = None,
+                  sector_prices: Optional[pd.DataFrame] = None, **kwargs) -> pd.DataFrame:
         """
         Calculate ML-based scores using walk-forward prediction
 
@@ -352,18 +370,25 @@ class MLQualifier:
             prices: Stock prices (DataFrame)
             spy_prices: SPY prices for relative strength (optional)
             volumes: Volume data (DataFrame, optional but recommended)
+            sector_prices: Sector ETF prices (DataFrame, optional - XLK, XLF, XLE, etc.)
             **kwargs: Additional arguments (ignored, for compatibility)
 
         Returns:
             DataFrame with ML scores (probability of outperformance)
         """
         print(f"   [ML] Engineering features for {len(prices.columns)} stocks...")
+        feature_count = 24  # Base features
         if volumes is not None:
-            print(f"   [ML] Using volume data (24 features per stock)")
+            feature_count += 4
+        if sector_prices is not None:
+            feature_count += len(sector_prices.columns)
+            print(f"   [ML] Using {len(sector_prices.columns)} sector ETFs ({feature_count} features per stock)")
+        elif volumes is not None:
+            print(f"   [ML] Using volume data ({feature_count} features per stock)")
         else:
-            print(f"   [ML] No volume data (20 features per stock)")
+            print(f"   [ML] No volume/sector data ({feature_count} features per stock)")
 
-        features = self.engineer_features(prices, spy_prices, volumes)
+        features = self.engineer_features(prices, spy_prices, volumes, sector_prices)
 
         if features.empty:
             print("   [ML] WARNING: No features engineered")
@@ -438,7 +463,15 @@ class MLQualifier:
 
                 # Scale and predict
                 X_pred = self.scaler.transform(ticker_features[valid_idx].values)
-                probs = model.predict_proba(X_pred)[:, 1]  # Probability of class 1 (outperform)
+
+                # Handle single-class predictions (e.g., when predicting SPY alone)
+                proba_output = model.predict_proba(X_pred)
+                if proba_output.shape[1] == 1:
+                    # Model only learned one class - use predictions directly as scores
+                    probs = model.predict(X_pred).astype(float)
+                else:
+                    # Normal case - use probability of class 1 (outperform)
+                    probs = proba_output[:, 1]
 
                 # Store predictions
                 predictions.loc[ticker_features[valid_idx].index, ticker] = probs
