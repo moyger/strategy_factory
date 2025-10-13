@@ -244,13 +244,23 @@ class MLQualifier:
         train_features = features.loc[train_start:train_end]
         train_labels = labels.loc[train_start:train_end]
 
+        # Determine expected number of features per ticker (use first ticker as reference)
+        first_ticker = labels.columns[0]
+        first_ticker_cols = [col for col in features.columns if col.startswith(f"{first_ticker}_")]
+        n_features = len(first_ticker_cols)
+
         # Reshape to (samples, features) for sklearn
         X_train_list = []
         y_train_list = []
 
         for ticker in labels.columns:
             # Get features for this ticker
-            ticker_cols = [col for col in features.columns if col.startswith(ticker)]
+            ticker_cols = [col for col in features.columns if col.startswith(f"{ticker}_")]
+
+            # Skip if wrong number of features (data quality issue)
+            if len(ticker_cols) != n_features:
+                continue
+
             ticker_features = train_features[ticker_cols]
             ticker_labels = train_labels[ticker]
 
@@ -354,9 +364,10 @@ class MLQualifier:
 
             # Predict for each stock
             for ticker in prices.columns:
-                ticker_cols = [col for col in features.columns if col.startswith(ticker)]
+                ticker_cols = [col for col in features.columns if col.startswith(f"{ticker}_")]
 
-                if len(ticker_cols) == 0:
+                # Skip if wrong number of features
+                if len(ticker_cols) != n_features:
                     continue
 
                 ticker_features = features.loc[pred_start:pred_end, ticker_cols]
