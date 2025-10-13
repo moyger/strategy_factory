@@ -339,6 +339,11 @@ class MLQualifier:
 
         print(f"   [ML] Retraining at {len(actual_rebalance_dates)} dates...")
 
+        # Determine expected number of features (from first ticker)
+        first_ticker = prices.columns[0]
+        first_ticker_cols = [col for col in features.columns if col.startswith(f"{first_ticker}_")]
+        n_features = len(first_ticker_cols)
+
         for i, rebal_date in enumerate(actual_rebalance_dates):
             # Training period: 3 years before rebalance date
             train_end = rebal_date
