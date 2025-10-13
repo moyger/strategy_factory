@@ -138,7 +138,9 @@ class NickRadgeCryptoHybrid:
 
         return regime
 
-    def calculate_indicators(self, prices: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    def calculate_indicators(self,
+                           prices: pd.DataFrame,
+                           btc_prices: Optional[pd.Series] = None) -> Dict[str, pd.DataFrame]:
         """
         Calculate indicators for satellite selection
 
@@ -146,12 +148,33 @@ class NickRadgeCryptoHybrid:
 
         Args:
             prices: DataFrame with crypto prices (columns = tickers)
+            btc_prices: BTC prices (used as SPY proxy for ML qualifiers)
 
         Returns:
             Dictionary with indicator DataFrames
         """
-        # Calculate qualifier scores for satellite candidates
-        scores = self.qualifier.calculate(prices).shift(1)
+        # === IMPROVEMENT 2: ML Qualifier Support ===
+        # ML qualifiers need volume and sector data, but crypto doesn't have sectors
+        # Use prices as volume proxy (crypto volume patterns similar to price)
+        if self.qualifier_type in ['ml_xgb', 'ml_rf', 'hybrid']:
+            print(f"   [ML] Using {self.qualifier_type.upper()} qualifier for satellite selection")
+            print(f"   [ML] Note: Crypto-specific ML (no sector features, volume=price proxy)")
+            try:
+                # For crypto: spy_prices=btc_prices, volumes=prices, sector_prices=None
+                scores = self.qualifier.calculate(
+                    prices,
+                    spy_prices=btc_prices,
+                    volumes=prices,  # Use prices as volume proxy
+                    sector_prices=None  # No sector ETFs for crypto
+                ).shift(1)
+            except Exception as e:
+                print(f"   ⚠️  ML qualifier failed: {e}")
+                print(f"   Falling back to simple ROC ranking...")
+                # Fallback to simple momentum if ML fails
+                scores = prices.pct_change(100).shift(1)
+        else:
+            # Traditional qualifiers (TQS, ROC, BSS, etc.)
+            scores = self.qualifier.calculate(prices).shift(1)
 
         # Moving Average filter
         ma = prices.rolling(window=self.ma_period).mean().shift(1)
@@ -248,7 +271,7 @@ class NickRadgeCryptoHybrid:
         satellite_universe = [c for c in prices.columns
                              if c not in self.core_assets and c != self.bear_asset]
         satellite_prices = prices[satellite_universe]
-        indicators = self.calculate_indicators(satellite_prices)
+        indicators = self.calculate_indicators(satellite_prices, btc_prices)
 
         # Get rebalance dates (quarterly)
         rebalance_dates = pd.date_range(
@@ -366,8 +389,28 @@ class NickRadgeCryptoHybrid:
 
                 allocations.loc[date, self.bear_asset] = paxg_allocation
 
+        # === IMPROVEMENT 3: Allocation Edge Case Warnings ===
         # Normalize to ensure weights sum to 1.0
         row_sums = allocations.sum(axis=1)
+
+        # Check for zero allocation days (edge case warning)
+        zero_alloc_days = row_sums[row_sums == 0]
+        if len(zero_alloc_days) > 0:
+            pct_zero = len(zero_alloc_days) / len(row_sums) * 100
+            print(f"\n   ⚠️  WARNING: {len(zero_alloc_days)} days ({pct_zero:.1f}%) with ZERO allocations (100% cash)")
+            print(f"   This occurs when:")
+            print(f"   - No valid satellites found (all below MA)")
+            print(f"   - Bear asset missing AND in BEAR regime")
+            print(f"   - All allocations filtered out")
+            if pct_zero > 10:
+                print(f"   ⚠️  CRITICAL: >10% zero allocation days! Strategy may underperform!")
+
+        # Check for very low allocation days
+        low_alloc_days = row_sums[(row_sums > 0) & (row_sums < 0.50)]
+        if len(low_alloc_days) > 0:
+            pct_low = len(low_alloc_days) / len(row_sums) * 100
+            print(f"\n   ⚠️  INFO: {len(low_alloc_days)} days ({pct_low:.1f}%) with <50% allocations")
+
         allocations = allocations.div(row_sums, axis=0).fillna(0.0)
 
         # Regime summary
@@ -408,6 +451,45 @@ class NickRadgeCryptoHybrid:
         print(f"   Rebalance: {self.rebalance_freq}")
         print(f"   Bear Asset: {self.bear_asset}")
         print(f"   Initial Capital: ${initial_capital:,.0f}")
+
+        # === IMPROVEMENT 1: Bear Asset Validation & Auto-Download ===
+        if self.bear_asset not in prices.columns:
+            print(f"\n⚠️  Bear asset {self.bear_asset} not in data, attempting auto-download...")
+            try:
+                import yfinance as yf
+                bear_data = yf.download(
+                    self.bear_asset,
+                    start=prices.index[0],
+                    end=prices.index[-1],
+                    progress=False
+                )
+                if bear_data is not None and not bear_data.empty:  # type: ignore
+                    # Extract Close price
+                    if isinstance(bear_data.columns, pd.MultiIndex):
+                        bear_close = bear_data['Close'].iloc[:, 0]  # type: ignore
+                    else:
+                        bear_close = bear_data['Close']  # type: ignore
+
+                    # Align with prices index
+                    prices[self.bear_asset] = bear_close.reindex(prices.index, method='ffill')  # type: ignore
+                    print(f"   ✅ Successfully downloaded {self.bear_asset}")
+                else:
+                    raise ValueError(f"Downloaded data for {self.bear_asset} is empty")
+            except Exception as e:
+                raise ValueError(
+                    f"❌ Bear asset {self.bear_asset} not found in prices and auto-download failed: {e}\n"
+                    f"   Available tickers: {list(prices.columns[:10])}...\n"
+                    f"   Please include {self.bear_asset} in your input data or use a different bear asset."
+                )
+
+        # Validate core assets exist
+        missing_core = [asset for asset in self.core_assets if asset not in prices.columns]
+        if missing_core:
+            raise ValueError(
+                f"❌ Core assets missing from prices: {missing_core}\n"
+                f"   Available tickers: {list(prices.columns[:10])}...\n"
+                f"   Core assets are required and cannot be auto-downloaded (strategy depends on them)."
+            )
 
         # Validate data - remove columns with any NaN values
         nan_cols = prices.columns[prices.isna().any()].tolist()
