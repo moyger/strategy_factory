@@ -221,10 +221,10 @@ class MLQualifier:
             # Get 80th percentile threshold
             threshold = date_returns.quantile(0.80)
 
-            # Label top 20% as 1
-            labels.loc[date] = (date_returns >= threshold).astype(float)
+            # Label top 20% as 1, rest as 0 (explicit int conversion)
+            labels.loc[date] = (date_returns >= threshold).astype(int)
 
-        return labels
+        return labels.astype(float)  # Ensure float dtype for consistency
 
     def train_model(self, features: pd.DataFrame, labels: pd.DataFrame,
                     train_start: pd.Timestamp, train_end: pd.Timestamp) -> RandomForestClassifier:
