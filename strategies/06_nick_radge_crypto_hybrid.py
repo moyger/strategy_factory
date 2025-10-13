@@ -269,6 +269,7 @@ class NickRadgeCryptoHybrid:
 
         # Track current satellite holdings
         current_satellite = []
+        satellite_scores = {}  # Initialize before loop to avoid UnboundLocalError
 
         print(f"\n📊 Generating Hybrid Allocations...")
         print(f"   Core: {len(self.core_assets)} assets ({self.core_allocation:.0%})")
@@ -278,15 +279,15 @@ class NickRadgeCryptoHybrid:
         for i, date in enumerate(prices.index):
             current_regime = regime.loc[date]
 
-            # Rebalance satellite on rebalance dates
-            if date in actual_rebalance_dates:
+            # Rebalance satellite on rebalance dates (or first date for initial pick)
+            if date in actual_rebalance_dates or (i == 0 and date not in actual_rebalance_dates):
                 selected = self.select_satellite(satellite_prices, indicators, date)
                 if len(selected) > 0:
                     current_satellite = selected['ticker'].tolist()
                     satellite_scores = dict(zip(selected['ticker'], selected['score']))
                 else:
                     current_satellite = []
-                    satellite_scores = {}
+                    satellite_scores = {}  # Clear scores if no valid satellites
 
             # Apply regime-based allocation
             if current_regime == 'BEAR':
@@ -468,7 +469,7 @@ class NickRadgeCryptoHybrid:
 
         print(f"\n✅ Backtest Complete!")
         print(f"   Final Value: ${portfolio.value().iloc[-1]:,.2f}")
-        print(f"   Total Return: {(portfolio.total_return() - 1) * 100:.2f}%")
+        print(f"   Total Return: {portfolio.total_return() * 100:.2f}%")  # total_return() already returns ratio
 
         return portfolio
 
@@ -483,9 +484,14 @@ class NickRadgeCryptoHybrid:
         print(f"   Satellite: {self.satellite_allocation:.0%} (Top {self.satellite_size} alts)")
         print(f"   Period: {prices.index[0].date()} to {prices.index[-1].date()}")
 
-        total_return = (portfolio.total_return() - 1) * 100 if callable(portfolio.total_return) else (portfolio.total_return - 1) * 100
-        sharpe = portfolio.sharpe_ratio(freq='D') if callable(portfolio.sharpe_ratio) else portfolio.sharpe_ratio
-        max_dd = portfolio.max_drawdown() * 100 if callable(portfolio.max_drawdown) else portfolio.max_drawdown * 100
+        # VectorBT returns ratios, not decimals (e.g., 1.42 for +42%, not 0.42)
+        total_return_val = portfolio.total_return() if callable(portfolio.total_return) else portfolio.total_return
+        sharpe_val = portfolio.sharpe_ratio(freq='D') if callable(portfolio.sharpe_ratio) else portfolio.sharpe_ratio
+        max_dd_val = portfolio.max_drawdown() if callable(portfolio.max_drawdown) else portfolio.max_drawdown
+
+        total_return = float(total_return_val) * 100  # type: ignore
+        sharpe = float(sharpe_val)  # type: ignore
+        max_dd = float(max_dd_val) * 100  # type: ignore
 
         print(f"\n📈 Performance:")
         print(f"   Total Return: {total_return:.2f}%")
