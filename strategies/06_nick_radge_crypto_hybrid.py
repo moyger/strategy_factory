@@ -445,7 +445,9 @@ class NickRadgeCryptoHybrid:
                 allocations.loc[date, self.bear_asset] = paxg_allocation
 
         # === IMPROVEMENT 3: Allocation Edge Case Warnings ===
-        # Normalize to ensure weights sum to 1.0
+        # === FIX: NO blanket normalization - maintain intended 70/30 split ===
+        # When satellites are missing, residual goes to CASH (not re-levered to core)
+        # This preserves the strategy's designed risk profile
         row_sums = allocations.sum(axis=1)
 
         # Check for zero allocation days (edge case warning)
@@ -460,13 +462,26 @@ class NickRadgeCryptoHybrid:
             if pct_zero > 10:
                 print(f"   ⚠️  CRITICAL: >10% zero allocation days! Strategy may underperform!")
 
-        # Check for very low allocation days
-        low_alloc_days = row_sums[(row_sums > 0) & (row_sums < 0.50)]
-        if len(low_alloc_days) > 0:
-            pct_low = len(low_alloc_days) / len(row_sums) * 100
-            print(f"\n   ⚠️  INFO: {len(low_alloc_days)} days ({pct_low:.1f}%) with <50% allocations")
+        # Check for partial allocation days (< 100% = some cash held)
+        partial_alloc_days = row_sums[(row_sums > 0) & (row_sums < 1.0)]
+        if len(partial_alloc_days) > 0:
+            avg_alloc = partial_alloc_days.mean()
+            avg_cash = 1.0 - avg_alloc
+            pct_partial = len(partial_alloc_days) / len(row_sums) * 100
+            print(f"\n   ℹ️  INFO: {len(partial_alloc_days)} days ({pct_partial:.1f}%) with partial allocations")
+            print(f"      Average allocation: {avg_alloc*100:.1f}%, Average cash: {avg_cash*100:.1f}%")
+            print(f"      This is CORRECT - missing satellites stay in cash (maintains 70/30 design)")
 
-        allocations = allocations.div(row_sums, axis=0).fillna(0.0)
+        # Check for over-allocation (should never happen, but good to catch)
+        over_alloc_days = row_sums[row_sums > 1.01]  # Allow small rounding errors
+        if len(over_alloc_days) > 0:
+            print(f"\n   ❌ ERROR: {len(over_alloc_days)} days with allocations > 100%!")
+            print(f"      Max allocation: {row_sums.max()*100:.2f}%")
+            print(f"      This is a bug - allocations should never exceed 100%")
+
+        # === NO NORMALIZATION ===
+        # Keep allocations as-is - VectorBT's targetpercent sizing handles cash automatically
+        # When row sum < 1.0, the remaining % stays in cash (correct behavior)
 
         # Regime summary
         regime_counts = regime.value_counts()
