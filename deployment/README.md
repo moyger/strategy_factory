@@ -1,6 +1,22 @@
 # Live Trading Deployment
 
-This folder contains production-ready live trading implementations for Interactive Brokers (IBKR).
+This folder contains production-ready live trading implementations for **stocks** (IBKR) and **crypto** (Bybit).
+
+---
+
+## Available Deployments
+
+### 📈 Stock Strategies (IBKR)
+- **TQS Strategy** (Recommended) → [DEPLOYMENT_GUIDE_TQS.md](DEPLOYMENT_GUIDE_TQS.md)
+- **BSS Strategy** (Alternative) → [DEPLOYMENT_GUIDE_BSS.md](DEPLOYMENT_GUIDE_BSS.md)
+
+### 🪙 Crypto Strategy (Bybit)
+- **Nick Radge Crypto Hybrid** → [crypto_hybrid/](crypto_hybrid/) ([Guide](crypto_hybrid/BYBIT_DEPLOYMENT_GUIDE.md))
+  - 70/30 Core/Satellite (BTC/ETH/SOL + Top 3 Alts)
+  - 19,410% return (2020-2025), Sharpe 1.81
+  - Windows VPS deployment ready
+
+---
 
 ## Quick Start
 

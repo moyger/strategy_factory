@@ -194,6 +194,62 @@ For crypto: Use Nick Radge Momentum instead.
 7. Log results to deployment/logs/
 ```
 
+## Risk Management: Position Stop-Loss System
+
+**Nick Radge Crypto Hybrid Strategy (06_nick_radge_crypto_hybrid.py)** uses a **position-only stop-loss** system based on comprehensive backtest results (2020-2025).
+
+### Configuration (DEFAULT)
+
+```python
+strategy = NickRadgeCryptoHybrid(
+    portfolio_stop_loss=None,        # DISABLED (default)
+    position_stop_loss=0.40,         # 40% stop on individual positions
+    position_stop_loss_core_only=False  # Apply to ALL positions
+)
+```
+
+### Why Position-Only Stops?
+
+Backtest comparison over 2020-2025 (2,113 days including Trump tariff event):
+
+| Configuration | Total Return | Max DD | Result |
+|--------------|-------------|---------|---------|
+| **Position-only (40%)** | **19,410%** | -48.35% | ✅ **OPTIMAL** |
+| No stops | 19,137% | -48.44% | Baseline |
+| Portfolio-only (30%) | 7,956% | -43.11% | -11,000% underperformance |
+| Layered (both) | 8,156% | -43.11% | -11,000% underperformance |
+
+**Key Finding:** Position stops actually **improved returns by +273%** vs baseline by cutting catastrophic losses early while letting winners run.
+
+### Position Stops Caught (2020-2025)
+
+8 catastrophic failures prevented:
+- **SOL-USD:** -88.3% (stopped at -40%)
+- **AVAX-USD:** -79.4%
+- **DOT-USD:** -77.4%
+- **ADA-USD:** -72.0% and -43.4% (twice)
+- **ETH-USD:** -63.0%
+- **BTC-USD:** -57.7%
+- **DOGE-USD:** -42.8%
+
+### Why Portfolio Stops Failed
+
+Portfolio-level stops (30% from peak) caused:
+- **43 trigger events** forcing 100% PAXG exits
+- **328 days in cash** (15.5% of test period)
+- **Missed major recoveries** after drawdowns
+- **Excessive whipsawing** (-11,000% return cost)
+
+**Conclusion:** Portfolio stops are too conservative for crypto's high volatility. Position stops provide better risk management by cutting individual losers without forcing full exits.
+
+### Implementation Notes
+
+- Position stops track entry price for EACH position
+- Stop triggered when position drops >40% from entry
+- Applies to both core (BTC/ETH/SOL) and satellite assets
+- Independent of regime filter (runs in parallel)
+- No cooldown or re-entry logic needed (position-specific)
+
 ## Important Configuration Files
 
 **`deployment/config_live.json`** - Live trading configuration

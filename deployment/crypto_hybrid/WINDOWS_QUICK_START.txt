@@ -1,0 +1,254 @@
+================================================================================
+WINDOWS VPS QUICK START - CRYPTO TRADING BOT
+================================================================================
+
+Nick Radge Crypto Hybrid Strategy - Bybit
+Backtest: 19,410% return (2020-2025), Sharpe 1.81, Position Stops 40%
+
+================================================================================
+STEP 1: INSTALL PYTHON
+================================================================================
+
+1. Download Python 3.11 from: https://www.python.org/downloads/
+2. Run installer
+3. ✅ CHECK "Add Python to PATH" ✅
+4. Click "Install Now"
+5. Verify: Open cmd.exe and type:
+   python --version
+
+================================================================================
+STEP 2: SETUP FILES
+================================================================================
+
+1. Create folder: C:\TradingBot
+2. Copy these files to C:\TradingBot:
+   - live_crypto_bybit.py
+   - config_crypto_bybit.json
+   - bybit_adapter.py
+   - setup_windows.bat
+   - run_crypto_bot_windows.bat
+
+3. Open cmd.exe as Administrator
+4. Run:
+   cd C:\TradingBot
+   setup_windows.bat
+
+================================================================================
+STEP 3: GET API KEYS
+================================================================================
+
+Testnet (for testing): https://testnet.bybit.com/
+1. Create account
+2. Go to API Management
+3. Create New Key
+4. Enable: Spot Trading only
+5. Copy API Key and Secret
+
+================================================================================
+STEP 4: CONFIGURE
+================================================================================
+
+1. Open: notepad config_crypto_bybit.json
+2. Update:
+   {
+       "testnet": true,              ← Keep true!
+       "dry_run": true,              ← Keep true!
+       "api_credentials": {
+           "api_key": "PASTE_YOUR_KEY_HERE",
+           "api_secret": "PASTE_YOUR_SECRET_HERE"
+       },
+       "trading_params": {
+           "initial_capital": 10000
+       }
+   }
+3. Save and close
+
+================================================================================
+STEP 5: TEST RUN
+================================================================================
+
+Open cmd.exe:
+cd C:\TradingBot
+run_crypto_bot_windows.bat
+
+You should see:
+✅ Connected to Bybit (Testnet)
+✅ DRY RUN MODE - No real trades
+✅ Strategy initialized successfully
+
+Press Ctrl+C to stop
+
+================================================================================
+STEP 6: CHECK LOGS
+================================================================================
+
+cd C:\TradingBot\logs
+notepad crypto_bybit_live.log
+
+Look for errors. If none, you're good!
+
+================================================================================
+TESTING PHASE (1-2 WEEKS MINIMUM)
+================================================================================
+
+Run the bot daily and check:
+1. No errors in logs
+2. Rebalancing triggers correctly
+3. Data downloads work
+4. Position stops work (if any trigger)
+
+Keep: testnet: true, dry_run: true
+
+================================================================================
+GOING LIVE (AFTER TESTING)
+================================================================================
+
+⚠️  ONLY after 1-2 weeks successful testing ⚠️
+
+1. Get LIVE Bybit API keys: https://www.bybit.com/
+2. Update config:
+   {
+       "testnet": false,     ← Switch to live
+       "dry_run": true       ← Keep dry run first!
+   }
+3. Test for 2-3 days with live data
+4. If all good, final step:
+   {
+       "dry_run": false      ← REAL MONEY MODE
+   }
+5. Start with 10-20% of target capital
+6. Monitor DAILY for first week
+
+================================================================================
+RUN AS WINDOWS SERVICE (24/7)
+================================================================================
+
+For 24/7 operation:
+
+1. Download NSSM: https://nssm.cc/download
+2. Extract nssm.exe to C:\TradingBot
+3. Open cmd.exe as Administrator
+4. Run:
+   cd C:\TradingBot
+   install_windows_service.bat
+5. Start service:
+   sc start CryptoTradingBot
+
+Check status:
+sc query CryptoTradingBot
+
+Manage via GUI:
+Win+R → services.msc → Find "Crypto Trading Bot"
+
+================================================================================
+EMERGENCY STOP
+================================================================================
+
+If bot running in cmd.exe:
+   Press Ctrl+C
+
+If running as service:
+   sc stop CryptoTradingBot
+
+Or:
+   Win+R → services.msc → Stop "Crypto Trading Bot"
+
+To disable trading without stopping:
+   Edit config_crypto_bybit.json
+   Set: "dry_run": true
+   Restart bot
+
+================================================================================
+MONITORING
+================================================================================
+
+View logs in real-time:
+powershell Get-Content logs\crypto_bybit_live.log -Wait -Tail 20
+
+View trades:
+notepad logs\trades_crypto_bybit.csv
+
+View performance:
+cd logs
+python -c "import pandas as pd; print(pd.read_csv('performance_crypto_bybit.csv').tail())"
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Error: "Python not found"
+→ Reinstall Python, check "Add to PATH"
+
+Error: "pip not recognized"
+→ Run: python -m pip install --upgrade pip
+
+Error: "Connection failed"
+→ Check Windows Firewall
+→ Allow python.exe through firewall
+
+Bot crashes:
+→ Check logs\crypto_bybit_live.log
+→ Look for error messages
+
+No trades executing:
+→ Check if dry_run: true (no trades in dry run)
+→ Check if testnet API keys are correct
+→ Verify USDT balance in Bybit
+
+================================================================================
+IMPORTANT REMINDERS
+================================================================================
+
+✅ ALWAYS start with testnet
+✅ ALWAYS start with dry_run
+✅ Test for 1-2 weeks minimum
+✅ Start with small capital
+✅ Monitor daily first week
+✅ Have emergency stop ready
+
+❌ NEVER skip testing
+❌ NEVER risk money you can't lose
+❌ NEVER disable position stops
+❌ NEVER go live without dry run testing
+
+================================================================================
+STRATEGY DETAILS
+================================================================================
+
+Strategy: Nick Radge Crypto Hybrid
+- 70% Core: BTC, ETH, SOL (fixed)
+- 30% Satellite: Top 3 alts (quarterly rebalance)
+- Position Stops: 40% (catches individual failures)
+- Regime Filter: BTC 200MA/100MA (exits to cash in bear)
+
+Backtest Results (2020-2025):
+- Total Return: 19,410%
+- Annualized: 148%
+- Sharpe Ratio: 1.81
+- Max Drawdown: -48.35%
+- Position Stops: 8 triggered (prevented -70% to -88% crashes)
+
+Validation:
+✅ Walk-Forward: 75% consistency
+✅ Monte Carlo: 100% profit probability
+✅ Position stops caught real failures
+
+================================================================================
+SUPPORT
+================================================================================
+
+Full Documentation:
+- WINDOWS_VPS_SETUP.md (detailed guide)
+- BYBIT_DEPLOYMENT_GUIDE.md (main guide)
+- CLAUDE.md (strategy details)
+
+Results:
+- results/crypto/walk_forward_validation.csv
+- results/crypto/monte_carlo_validation.csv
+- results/crypto/stop_loss_threshold_comparison.csv
+
+================================================================================
+
+Ready to deploy? Run: setup_windows.bat
+
+Good luck! 🚀
