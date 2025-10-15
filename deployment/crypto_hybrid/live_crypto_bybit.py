@@ -205,20 +205,16 @@ class LiveCryptoTrader:
 
             for symbol in universe:
                 try:
-                    # Fetch OHLCV data from Bybit
-                    ohlcv = self.broker.exchange.fetch_ohlcv(
+                    # Fetch OHLCV data from Bybit using broker interface
+                    df = self.broker.get_historical_data(
                         symbol,
                         timeframe=interval,
-                        limit=lookback
+                        bars=lookback
                     )
 
-                    # Convert to DataFrame
-                    df = pd.DataFrame(
-                        ohlcv,
-                        columns=['timestamp', 'open', 'high', 'low', 'close', 'volume']
-                    )
-                    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-                    df.set_index('timestamp', inplace=True)
+                    if df.empty:
+                        self.logger.warning(f"No data for {symbol}")
+                        continue
 
                     all_prices[symbol] = df['close']
 

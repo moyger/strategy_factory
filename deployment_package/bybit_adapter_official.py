@@ -375,6 +375,110 @@ class BybitAdapterOfficial(BaseBroker):
             print(f"❌ Order history error: {e}")
             return []
 
+    def get_historical_data(
+        self,
+        symbol: str,
+        timeframe: str = '1d',
+        bars: int = 500
+    ) -> pd.DataFrame:
+        """
+        Get historical OHLCV data
+
+        Args:
+            symbol: Trading pair (e.g., 'BTC/USDT')
+            timeframe: Timeframe (e.g., '1d', '1h', '5m')
+            bars: Number of bars to fetch
+
+        Returns:
+            DataFrame with OHLCV data
+        """
+        if not self.connected:
+            return pd.DataFrame()
+
+        try:
+            # Convert symbol format
+            symbol_clean = symbol.replace('/', '').replace('-', '')
+
+            # Map timeframe to Bybit interval
+            interval_map = {
+                '1m': '1', '3m': '3', '5m': '5', '15m': '15', '30m': '30',
+                '1h': '60', '2h': '120', '4h': '240', '6h': '360', '12h': '720',
+                '1d': 'D', '1w': 'W', '1M': 'M'
+            }
+
+            interval = interval_map.get(timeframe, 'D')
+
+            # Fetch kline data
+            response = self.session.get_kline(
+                category='spot',
+                symbol=symbol_clean,
+                interval=interval,
+                limit=bars
+            )
+
+            if response['retCode'] != 0:
+                print(f"❌ Historical data error: {response['retMsg']}")
+                return pd.DataFrame()
+
+            # Parse data
+            klines = response['result']['list']
+
+            if not klines:
+                return pd.DataFrame()
+
+            # Convert to DataFrame
+            df = pd.DataFrame(klines, columns=[
+                'timestamp', 'open', 'high', 'low', 'close', 'volume', 'turnover'
+            ])
+
+            # Convert types
+            df['timestamp'] = pd.to_datetime(df['timestamp'].astype(float), unit='ms')
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                df[col] = df[col].astype(float)
+
+            # Sort by timestamp (ascending)
+            df = df.sort_values('timestamp').reset_index(drop=True)
+
+            # Set timestamp as index
+            df.set_index('timestamp', inplace=True)
+
+            return df[['open', 'high', 'low', 'close', 'volume']]
+
+        except Exception as e:
+            print(f"❌ Historical data fetch error: {e}")
+            return pd.DataFrame()
+
+    def get_current_price(self, symbol: str) -> float:
+        """
+        Get current price for a symbol
+
+        Args:
+            symbol: Trading pair (e.g., 'BTC/USDT')
+
+        Returns:
+            Current price as float
+        """
+        if not self.connected:
+            return 0.0
+
+        try:
+            symbol_clean = symbol.replace('/', '').replace('-', '')
+
+            response = self.session.get_tickers(
+                category='spot',
+                symbol=symbol_clean
+            )
+
+            if response['retCode'] == 0 and response['result']['list']:
+                ticker = response['result']['list'][0]
+                return float(ticker['lastPrice'])
+            else:
+                return 0.0
+
+        except Exception as e:
+            print(f"❌ Price fetch error for {symbol}: {e}")
+            return 0.0
+
     def get_account_info(self) -> Dict:
         """
         Get account information

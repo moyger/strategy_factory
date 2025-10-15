@@ -1,0 +1,6 @@
+symbol,side,qty,reason,timestamp,dry_run
+USDCUSDT,sell,50000.0,Close position,2025-10-15 21:25:23.108978,True
+BTCUSDT,sell,0.2,Close position,2025-10-15 21:25:23.108978,True
+ETHUSDT,sell,1.0,Close position,2025-10-15 21:25:23.108978,True
+EOSUSDT,sell,2000.0,Close position,2025-10-15 21:25:23.108978,True
+XRPUSDT,sell,10000.0,Close position,2025-10-15 21:25:23.108978,True

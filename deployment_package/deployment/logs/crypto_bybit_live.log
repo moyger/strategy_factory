@@ -1,0 +1,113 @@
+2025-10-15 21:17:36,160 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:17:36,160 - LiveCryptoTrader - INFO - LIVE CRYPTO TRADING - NICK RADGE HYBRID STRATEGY
+2025-10-15 21:17:36,160 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:17:36,160 - LiveCryptoTrader - INFO - ✅ DRY RUN MODE - No real trades
+2025-10-15 21:17:36,160 - LiveCryptoTrader - INFO - ✅ TESTNET MODE
+2025-10-15 21:17:36,160 - LiveCryptoTrader - INFO - Connecting to Bybit (Testnet)...
+2025-10-15 21:17:36,160 - LiveCryptoTrader - INFO - Using adapter: official
+2025-10-15 21:17:36,216 - LiveCryptoTrader - ERROR - Broker connection error: Can't instantiate abstract class BybitAdapterOfficial without an implementation for abstract method 'get_historical_data'
+2025-10-15 21:17:36,216 - LiveCryptoTrader - ERROR - Failed to connect to broker. Exiting.
+2025-10-15 21:18:00,135 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:18:00,135 - LiveCryptoTrader - INFO - LIVE CRYPTO TRADING - NICK RADGE HYBRID STRATEGY
+2025-10-15 21:18:00,135 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:18:00,135 - LiveCryptoTrader - INFO - ✅ DRY RUN MODE - No real trades
+2025-10-15 21:18:00,135 - LiveCryptoTrader - INFO - ✅ TESTNET MODE
+2025-10-15 21:18:00,135 - LiveCryptoTrader - INFO - Connecting to Bybit (Testnet)...
+2025-10-15 21:18:00,135 - LiveCryptoTrader - INFO - Using adapter: ccxt
+2025-10-15 21:18:00,137 - LiveCryptoTrader - ERROR - Broker connection error: ccxt not installed
+2025-10-15 21:18:00,137 - LiveCryptoTrader - ERROR - Failed to connect to broker. Exiting.
+2025-10-15 21:18:35,256 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:18:35,256 - LiveCryptoTrader - INFO - LIVE CRYPTO TRADING - NICK RADGE HYBRID STRATEGY
+2025-10-15 21:18:35,256 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:18:35,256 - LiveCryptoTrader - INFO - ✅ DRY RUN MODE - No real trades
+2025-10-15 21:18:35,256 - LiveCryptoTrader - INFO - ✅ TESTNET MODE
+2025-10-15 21:18:35,256 - LiveCryptoTrader - INFO - Connecting to Bybit (Testnet)...
+2025-10-15 21:18:35,256 - LiveCryptoTrader - INFO - Using adapter: ccxt
+2025-10-15 21:18:35,258 - LiveCryptoTrader - ERROR - Broker connection error: ccxt not installed
+2025-10-15 21:18:35,258 - LiveCryptoTrader - ERROR - Failed to connect to broker. Exiting.
+2025-10-15 21:23:48,485 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:23:48,485 - LiveCryptoTrader - INFO - LIVE CRYPTO TRADING - NICK RADGE HYBRID STRATEGY
+2025-10-15 21:23:48,485 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:23:48,485 - LiveCryptoTrader - INFO - ✅ DRY RUN MODE - No real trades
+2025-10-15 21:23:48,485 - LiveCryptoTrader - INFO - ✅ TESTNET MODE
+2025-10-15 21:23:48,485 - LiveCryptoTrader - INFO - Connecting to Bybit (Testnet)...
+2025-10-15 21:23:48,485 - LiveCryptoTrader - INFO - Using adapter: official
+2025-10-15 21:23:48,548 - LiveCryptoTrader - INFO - ✅ Using official Bybit SDK (pybit)
+2025-10-15 21:23:49,460 - LiveCryptoTrader - INFO - Connected! Balance: $0.00 USDT
+2025-10-15 21:23:49,460 - LiveCryptoTrader - INFO - Strategy initialized successfully
+2025-10-15 21:23:49,460 - LiveCryptoTrader - INFO -   Core: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT']
+2025-10-15 21:23:49,460 - LiveCryptoTrader - INFO -   Satellite size: 3
+2025-10-15 21:23:49,460 - LiveCryptoTrader - INFO -   Position stop: 0.4
+2025-10-15 21:23:54,952 - LiveCryptoTrader - INFO - 
+================================================================================
+2025-10-15 21:23:54,952 - LiveCryptoTrader - INFO - REBALANCE TRIGGERED
+2025-10-15 21:23:54,952 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:23:54,952 - LiveCryptoTrader - INFO - Fetching historical data...
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch BTC/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch ETH/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch SOL/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch ADA/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch AVAX/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch DOGE/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch DOT/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch MATIC/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch LINK/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch UNI/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch ATOM/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch XRP/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch BNB/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch LTC/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch BCH/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch TRX/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch TON/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch NEAR/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch ARB/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch OP/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch INJ/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch SUI/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch APT/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch STX/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,952 - LiveCryptoTrader - WARNING - Failed to fetch AAVE/USDT: 'BybitAdapterOfficial' object has no attribute 'exchange'
+2025-10-15 21:23:54,953 - LiveCryptoTrader - INFO - Historical data ready: 0 days, 0 assets
+2025-10-15 21:23:54,954 - LiveCryptoTrader - INFO - Calculating target allocations...
+2025-10-15 21:23:54,954 - LiveCryptoTrader - ERROR - Allocation calculation error: 'BTC/USDT'
+2025-10-15 21:23:54,954 - LiveCryptoTrader - ERROR - Fatal error: 'BTC/USDT'
+2025-10-15 21:23:56,451 - LiveCryptoTrader - INFO - Cleaning up...
+2025-10-15 21:23:56,452 - LiveCryptoTrader - INFO - ✅ Shutdown complete
+2025-10-15 21:25:10,679 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:25:10,679 - LiveCryptoTrader - INFO - LIVE CRYPTO TRADING - NICK RADGE HYBRID STRATEGY
+2025-10-15 21:25:10,679 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:25:10,679 - LiveCryptoTrader - INFO - ✅ DRY RUN MODE - No real trades
+2025-10-15 21:25:10,679 - LiveCryptoTrader - INFO - ✅ TESTNET MODE
+2025-10-15 21:25:10,679 - LiveCryptoTrader - INFO - Connecting to Bybit (Testnet)...
+2025-10-15 21:25:10,679 - LiveCryptoTrader - INFO - Using adapter: official
+2025-10-15 21:25:10,733 - LiveCryptoTrader - INFO - ✅ Using official Bybit SDK (pybit)
+2025-10-15 21:25:11,240 - LiveCryptoTrader - INFO - Connected! Balance: $0.00 USDT
+2025-10-15 21:25:11,240 - LiveCryptoTrader - INFO - Strategy initialized successfully
+2025-10-15 21:25:11,240 - LiveCryptoTrader - INFO -   Core: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT']
+2025-10-15 21:25:11,240 - LiveCryptoTrader - INFO -   Satellite size: 3
+2025-10-15 21:25:11,240 - LiveCryptoTrader - INFO -   Position stop: 0.4
+2025-10-15 21:25:14,568 - LiveCryptoTrader - INFO - 
+================================================================================
+2025-10-15 21:25:14,569 - LiveCryptoTrader - INFO - REBALANCE TRIGGERED
+2025-10-15 21:25:14,569 - LiveCryptoTrader - INFO - ================================================================================
+2025-10-15 21:25:14,569 - LiveCryptoTrader - INFO - Fetching historical data...
+2025-10-15 21:25:19,307 - LiveCryptoTrader - WARNING - No data for INJ/USDT
+2025-10-15 21:25:20,181 - LiveCryptoTrader - WARNING - No data for STX/USDT
+2025-10-15 21:25:20,296 - LiveCryptoTrader - INFO - Historical data ready: 647 days, 23 assets
+2025-10-15 21:25:20,296 - LiveCryptoTrader - INFO - Calculating target allocations...
+2025-10-15 21:25:20,441 - LiveCryptoTrader - INFO - Target allocations: 4 positions
+2025-10-15 21:25:20,441 - LiveCryptoTrader - INFO -   BTC/USDT: 23.3%
+2025-10-15 21:25:20,441 - LiveCryptoTrader - INFO -   ETH/USDT: 23.3%
+2025-10-15 21:25:20,441 - LiveCryptoTrader - INFO -   SOL/USDT: 23.3%
+2025-10-15 21:25:20,441 - LiveCryptoTrader - INFO -   DOGE/USDT: 30.0%
+2025-10-15 21:25:22,095 - LiveCryptoTrader - INFO - [DRY RUN] Executing rebalance...
+2025-10-15 21:25:22,095 - LiveCryptoTrader - INFO -   Current balance: $0.00 USDT
+2025-10-15 21:25:22,095 - LiveCryptoTrader - INFO -   Current positions: 5
+2025-10-15 21:25:23,108 - LiveCryptoTrader - INFO -   Trades to execute: 5
+2025-10-15 21:25:23,108 - LiveCryptoTrader - INFO -   SELL 50000.000000 USDCUSDT (Close position)
+2025-10-15 21:25:23,108 - LiveCryptoTrader - INFO -   SELL 0.200000 BTCUSDT (Close position)
+2025-10-15 21:25:23,108 - LiveCryptoTrader - INFO -   SELL 1.000000 ETHUSDT (Close position)
+2025-10-15 21:25:23,108 - LiveCryptoTrader - INFO -   SELL 2000.000000 EOSUSDT (Close position)
+2025-10-15 21:25:23,108 - LiveCryptoTrader - INFO -   SELL 10000.000000 XRPUSDT (Close position)
+2025-10-15 21:25:23,112 - LiveCryptoTrader - INFO - Rebalance complete!

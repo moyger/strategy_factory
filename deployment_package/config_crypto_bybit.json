@@ -5,8 +5,8 @@
     "strategy": "nick_radge_crypto_hybrid",
 
     "api_credentials": {
-        "api_key": "REPLACE_WITH_YOUR_BYBIT_API_KEY",
-        "api_secret": "REPLACE_WITH_YOUR_BYBIT_API_SECRET"
+        "api_key": "uLx4eGZm1GQXyUxrpW",
+        "api_secret": "wXg9OyzsMp1m9DLjUexzGo3DAK9aAnrYOK2D"
     },
 
     "strategy_params": {
