@@ -166,21 +166,16 @@ class LiveCryptoTrader:
         try:
             params = self.config['strategy_params']
 
+            # LIVE TRADING VERSION - Only pass parameters accepted by clean strategy
             self.strategy = NickRadgeCryptoHybrid(
                 core_allocation=params['core_allocation'],
                 satellite_allocation=params['satellite_allocation'],
                 core_assets=params['core_assets'],
                 satellite_size=params['satellite_size'],
-                qualifier_type=params['qualifier_type'],
-                use_momentum_weighting=params['use_momentum_weighting'],
-                bear_asset=params['bear_asset'],
-                position_stop_loss=params.get('position_stop_loss'),
-                position_stop_loss_core_only=params.get('position_stop_loss_core_only', False),
-                portfolio_stop_loss=params.get('portfolio_stop_loss'),
+                position_stop_loss=params.get('position_stop_loss', 0.40),
                 regime_ma_long=params.get('regime_ma_long', 200),
                 regime_ma_short=params.get('regime_ma_short', 100),
-                ma_period=params.get('ma_period', 100),
-                rebalance_freq=params.get('rebalance_freq', 'QS')
+                ma_period=params.get('ma_period', 100)
             )
 
             self.logger.info("Strategy initialized successfully")
