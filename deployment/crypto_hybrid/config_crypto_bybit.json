@@ -82,13 +82,13 @@
         "telegram_bot_token": "7318367913:AAFTztzE2jkm8Dx_tqequx_wkpyfX1iiG38",
         "telegram_chat_id": "6606012832",
 
-        "email_enabled": false,
+        "email_enabled": true,
         "email_provider": "gmail",
-        "email_from": "your_bot@gmail.com",
-        "email_to": "your_email@gmail.com",
+        "email_from": "karloestrada@gmail.com",
+        "email_to": "karloestrada@gmail.com",
         "email_smtp_host": "smtp.gmail.com",
         "email_smtp_port": 587,
-        "email_password": "",
+        "email_password": "msrhwlrphptnawze",
         "email_use_tls": true,
 
         "sendgrid_api_key": "",
