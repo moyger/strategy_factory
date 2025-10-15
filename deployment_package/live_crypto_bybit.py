@@ -40,10 +40,10 @@ import importlib.util
 import warnings
 warnings.filterwarnings('ignore')
 
-# Import strategy module (same folder in deployment package)
+# Import strategy module (LIVE-ONLY version - no backtesting dependencies)
 spec = importlib.util.spec_from_file_location(
-    "nick_radge_crypto_hybrid",
-    Path(__file__).parent / "06_nick_radge_crypto_hybrid.py"
+    "nick_radge_crypto_hybrid_live",
+    Path(__file__).parent / "06_nick_radge_crypto_hybrid_live.py"
 )
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
