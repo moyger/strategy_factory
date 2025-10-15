@@ -78,9 +78,9 @@
     },
 
     "notifications": {
-        "telegram_enabled": false,
-        "telegram_bot_token": "",
-        "telegram_chat_id": "",
+        "telegram_enabled": true,
+        "telegram_bot_token": "7318367913:AAFTztzE2jkm8Dx_tqequx_wkpyfX1iiG38",
+        "telegram_chat_id": "6606012832",
 
         "email_enabled": false,
         "email_provider": "gmail",
