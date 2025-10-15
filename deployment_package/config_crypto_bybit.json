@@ -1,0 +1,120 @@
+{
+    "broker": "bybit",
+    "broker_adapter": "official",
+    "testnet": true,
+    "strategy": "nick_radge_crypto_hybrid",
+
+    "api_credentials": {
+        "api_key": "REPLACE_WITH_YOUR_BYBIT_API_KEY",
+        "api_secret": "REPLACE_WITH_YOUR_BYBIT_API_SECRET"
+    },
+
+    "strategy_params": {
+        "core_allocation": 0.70,
+        "satellite_allocation": 0.30,
+        "core_assets": ["BTC/USDT", "ETH/USDT", "SOL/USDT"],
+        "satellite_size": 3,
+        "qualifier_type": "tqs",
+        "use_momentum_weighting": true,
+        "bear_asset": "USDT",
+        "position_stop_loss": 0.40,
+        "position_stop_loss_core_only": false,
+        "portfolio_stop_loss": null,
+        "regime_ma_long": 200,
+        "regime_ma_short": 100,
+        "ma_period": 100,
+        "rebalance_freq": "QS"
+    },
+
+    "universe": [
+        "BTC/USDT",
+        "ETH/USDT",
+        "SOL/USDT",
+        "ADA/USDT",
+        "AVAX/USDT",
+        "DOGE/USDT",
+        "DOT/USDT",
+        "MATIC/USDT",
+        "LINK/USDT",
+        "UNI/USDT",
+        "ATOM/USDT",
+        "XRP/USDT",
+        "BNB/USDT",
+        "LTC/USDT",
+        "BCH/USDT",
+        "TRX/USDT",
+        "TON/USDT",
+        "NEAR/USDT",
+        "ARB/USDT",
+        "OP/USDT",
+        "INJ/USDT",
+        "SUI/USDT",
+        "APT/USDT",
+        "STX/USDT",
+        "AAVE/USDT"
+    ],
+
+    "trading_params": {
+        "market_type": "spot",
+        "max_position_size": 0.25,
+        "min_order_size_usdt": 10,
+        "slippage_pct": 0.002,
+        "fees_pct": 0.001,
+        "emergency_stop_loss": 0.50
+    },
+
+    "execution": {
+        "rebalance_time": "09:00",
+        "rebalance_days": "daily",
+        "dry_run": true,
+        "log_level": "INFO"
+    },
+
+    "risk_limits": {
+        "max_daily_loss_pct": 0.10,
+        "max_single_position_pct": 0.25,
+        "max_leverage": 1.0,
+        "max_portfolio_value_drop_pct": 0.50
+    },
+
+    "notifications": {
+        "telegram_enabled": false,
+        "telegram_bot_token": "",
+        "telegram_chat_id": "",
+        "notify_on_trade": true,
+        "notify_on_error": true,
+        "notify_on_stop_loss": true
+    },
+
+    "data_sources": {
+        "price_data": "ccxt",
+        "lookback_days": 500,
+        "data_interval": "1d"
+    },
+
+    "logging": {
+        "log_dir": "deployment/logs",
+        "log_file": "crypto_bybit_live.log",
+        "trade_log": "deployment/logs/trades_crypto_bybit.csv",
+        "position_log": "deployment/logs/positions_crypto_bybit.csv",
+        "performance_log": "deployment/logs/performance_crypto_bybit.csv"
+    },
+
+    "comments": {
+        "strategy": "Nick Radge Crypto Hybrid with 40% position stops",
+        "market_type": "SPOT TRADING ONLY - No leverage, no funding fees, no liquidation risk. Matches 19,410% backtest.",
+        "broker_adapter_options": "official (pybit - recommended) or ccxt (multi-exchange)",
+        "capital_management": "Bot uses ACTUAL balance from Bybit account (via broker.get_balance()). No need to set initial_capital - it's always dynamic and real-time.",
+        "minimum_capital": "$2,400 recommended (6 positions × $400 avg = diversified portfolio)",
+        "position_sizing": "Core 70% (BTC/ETH/SOL), Satellite 30% (top 3 from universe)",
+        "universe_size": "25 cryptos (expanded from 15 original). Original 15 proven in backtest. Added 10 for better satellite selection (L2s, DeFi, new L1s). Still 6 positions total.",
+        "backtest_period": "2020-2025 (5.8 years)",
+        "backtest_return": "19,410% total (148% annualized)",
+        "backtest_sharpe": "1.81",
+        "backtest_max_dd": "-48.35%",
+        "position_stops": "8 triggered in backtest (SOL -88%, AVAX -79%, etc.)",
+        "optimal_threshold": "40% stop-loss (tested vs 20%, 30%, 50%)",
+        "deployment_date": "2025-10-14",
+        "warning": "ALWAYS START WITH dry_run: true AND testnet: true. Use SPOT wallet, not futures wallet."
+    }
+}
