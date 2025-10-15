@@ -403,7 +403,8 @@ class LiveCryptoTrader:
                                 f"🚨 Position Stop-Loss Triggered\n"
                                 f"Symbol: {symbol}\n"
                                 f"Loss: {pnl_pct*100:.1f}%\n"
-                                f"Position closed"
+                                f"Position closed",
+                                event_type='stop_loss'
                             )
 
         except Exception as e:
@@ -445,7 +446,8 @@ class LiveCryptoTrader:
                             f"🚨🚨 EMERGENCY STOP 🚨🚨\n"
                             f"Portfolio DD: {dd*100:.1f}%\n"
                             f"All positions closed\n"
-                            f"Bot stopped"
+                            f"Bot stopped",
+                            event_type='error'
                         )
 
                     return True  # Stop trading
@@ -476,15 +478,40 @@ class LiveCryptoTrader:
 
         return False
 
-    def send_notification(self, message: str):
-        """Send notification via Telegram (if enabled)"""
-        if not self.config['notifications'].get('telegram_enabled'):
-            return
+    def send_notification(self, message: str, event_type: str = 'general'):
+        """
+        Send notification via multiple channels (Telegram + Email)
 
+        Args:
+            message: Notification message (plain text or with formatting)
+            event_type: Type of event (startup, trade, stop_loss, error, rebalance)
+        """
+        success = False
+
+        # Try Telegram first
+        if self.config['notifications'].get('telegram_enabled'):
+            if self._send_telegram(message):
+                success = True
+
+        # Try Email as backup/additional
+        if self.config['notifications'].get('email_enabled'):
+            if self._send_email(message, event_type):
+                success = True
+
+        if not success:
+            self.logger.warning(f"No notifications sent (all channels disabled or failed)")
+
+    def _send_telegram(self, message: str) -> bool:
+        """Send notification via Telegram"""
         try:
             import requests
+
             bot_token = self.config['notifications']['telegram_bot_token']
             chat_id = self.config['notifications']['telegram_chat_id']
+
+            if not bot_token or not chat_id:
+                self.logger.debug("Telegram not configured (missing bot_token or chat_id)")
+                return False
 
             url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             data = {
@@ -492,10 +519,255 @@ class LiveCryptoTrader:
                 'text': message,
                 'parse_mode': 'HTML'
             }
-            requests.post(url, data=data)
+
+            response = requests.post(url, data=data, timeout=10)
+
+            if response.status_code == 200:
+                self.logger.debug("✅ Telegram notification sent")
+                return True
+            else:
+                self.logger.error(f"Telegram error: {response.status_code} - {response.text}")
+                return False
 
         except Exception as e:
-            self.logger.error(f"Notification error: {e}")
+            self.logger.error(f"Telegram notification error: {e}")
+            return False
+
+    def _send_email(self, message: str, event_type: str) -> bool:
+        """Send notification via Email"""
+        try:
+            provider = self.config['notifications'].get('email_provider', 'gmail')
+
+            if provider == 'gmail':
+                return self._send_email_smtp(message, event_type)
+            elif provider == 'sendgrid':
+                return self._send_email_sendgrid(message, event_type)
+            elif provider == 'ses':
+                return self._send_email_ses(message, event_type)
+            else:
+                self.logger.error(f"Unknown email provider: {provider}")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Email notification error: {e}")
+            return False
+
+    def _send_email_smtp(self, message: str, event_type: str) -> bool:
+        """Send email via SMTP (Gmail, etc.)"""
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+
+            email_from = self.config['notifications']['email_from']
+            email_to = self.config['notifications']['email_to']
+            smtp_host = self.config['notifications']['email_smtp_host']
+            smtp_port = self.config['notifications']['email_smtp_port']
+            password = self.config['notifications']['email_password']
+            use_tls = self.config['notifications'].get('email_use_tls', True)
+
+            if not email_from or not email_to or not password:
+                self.logger.debug("Email not configured (missing credentials)")
+                return False
+
+            # Create message
+            msg = MIMEMultipart('alternative')
+            msg['From'] = email_from
+            msg['To'] = email_to
+            msg['Subject'] = self._get_email_subject(event_type, message)
+
+            # Plain text and HTML versions
+            text_part = MIMEText(message, 'plain')
+            html_part = MIMEText(self._format_email_html(message, event_type), 'html')
+
+            msg.attach(text_part)
+            msg.attach(html_part)
+
+            # Send email
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+                if use_tls:
+                    server.starttls()
+                server.login(email_from, password)
+                server.send_message(msg)
+
+            self.logger.debug("✅ Email notification sent (SMTP)")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"SMTP email error: {e}")
+            return False
+
+    def _send_email_sendgrid(self, message: str, event_type: str) -> bool:
+        """Send email via SendGrid API"""
+        try:
+            import requests
+
+            api_key = self.config['notifications'].get('sendgrid_api_key')
+            email_from = self.config['notifications']['email_from']
+            email_to = self.config['notifications']['email_to']
+
+            if not api_key or not email_from or not email_to:
+                self.logger.debug("SendGrid not configured")
+                return False
+
+            url = "https://api.sendgrid.com/v3/mail/send"
+            headers = {
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json'
+            }
+
+            data = {
+                'personalizations': [{'to': [{'email': email_to}]}],
+                'from': {'email': email_from},
+                'subject': self._get_email_subject(event_type, message),
+                'content': [
+                    {'type': 'text/plain', 'value': message},
+                    {'type': 'text/html', 'value': self._format_email_html(message, event_type)}
+                ]
+            }
+
+            response = requests.post(url, json=data, headers=headers, timeout=30)
+
+            if response.status_code in [200, 202]:
+                self.logger.debug("✅ Email notification sent (SendGrid)")
+                return True
+            else:
+                self.logger.error(f"SendGrid error: {response.status_code}")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"SendGrid email error: {e}")
+            return False
+
+    def _send_email_ses(self, message: str, event_type: str) -> bool:
+        """Send email via AWS SES"""
+        try:
+            import boto3
+
+            region = self.config['notifications'].get('aws_ses_region', 'us-east-1')
+            access_key = self.config['notifications'].get('aws_access_key')
+            secret_key = self.config['notifications'].get('aws_secret_key')
+            email_from = self.config['notifications']['email_from']
+            email_to = self.config['notifications']['email_to']
+
+            if not access_key or not secret_key or not email_from or not email_to:
+                self.logger.debug("AWS SES not configured")
+                return False
+
+            client = boto3.client(
+                'ses',
+                region_name=region,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key
+            )
+
+            response = client.send_email(
+                Source=email_from,
+                Destination={'ToAddresses': [email_to]},
+                Message={
+                    'Subject': {'Data': self._get_email_subject(event_type, message)},
+                    'Body': {
+                        'Text': {'Data': message},
+                        'Html': {'Data': self._format_email_html(message, event_type)}
+                    }
+                }
+            )
+
+            self.logger.debug("✅ Email notification sent (AWS SES)")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"AWS SES email error: {e}")
+            return False
+
+    def _get_email_subject(self, event_type: str, message: str) -> str:
+        """Generate email subject based on event type"""
+        subjects = {
+            'startup': '🚀 Crypto Bot Started',
+            'trade': '💰 Trade Executed',
+            'stop_loss': '🚨 Stop-Loss Triggered',
+            'error': '❌ Bot Error Alert',
+            'rebalance': '🔄 Portfolio Rebalanced',
+            'general': '📊 Crypto Bot Notification'
+        }
+
+        subject = subjects.get(event_type, subjects['general'])
+
+        # Add snippet from message
+        first_line = message.split('\n')[0][:50]
+        if first_line != message.split('\n')[0]:
+            first_line += '...'
+
+        return f"{subject} - {first_line}"
+
+    def _format_email_html(self, message: str, event_type: str) -> str:
+        """Format message as HTML email"""
+        # Simple HTML template
+        style_colors = {
+            'startup': '#4CAF50',
+            'trade': '#2196F3',
+            'stop_loss': '#F44336',
+            'error': '#FF5722',
+            'rebalance': '#FF9800',
+            'general': '#9E9E9E'
+        }
+
+        color = style_colors.get(event_type, style_colors['general'])
+
+        # Convert plain text to HTML (preserve line breaks)
+        html_message = message.replace('\n', '<br>')
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: {color};
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px 8px 0 0;
+                    text-align: center;
+                }}
+                .content {{
+                    background: #f9f9f9;
+                    padding: 20px;
+                    border: 1px solid #ddd;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .footer {{
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 12px;
+                    color: #999;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>Nick Radge Crypto Hybrid Bot</h2>
+            </div>
+            <div class="content">
+                <p>{html_message}</p>
+            </div>
+            <div class="footer">
+                <p>Automated notification from your Crypto Trading Bot</p>
+                <p>Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        return html
 
     def log_trades(self, trades: List[Dict], dry_run: bool):
         """Log trades to CSV"""
@@ -571,13 +843,15 @@ class LiveCryptoTrader:
         self.initialize_strategy()
 
         # Send startup notification
-        self.send_notification(
-            f"🚀 Crypto Trading Bot Started\n"
-            f"Mode: {'DRY RUN' if self.config['execution']['dry_run'] else 'LIVE'}\n"
-            f"Testnet: {self.config.get('testnet', False)}\n"
-            f"Strategy: Nick Radge Crypto Hybrid\n"
-            f"Position Stops: 40%"
-        )
+        if self.config['notifications'].get('notify_on_startup', True):
+            self.send_notification(
+                f"🚀 Crypto Trading Bot Started\n"
+                f"Mode: {'DRY RUN' if self.config['execution']['dry_run'] else 'LIVE'}\n"
+                f"Testnet: {self.config.get('testnet', False)}\n"
+                f"Strategy: Nick Radge Crypto Hybrid\n"
+                f"Position Stops: 40%",
+                event_type='startup'
+            )
 
         self.is_running = True
 
@@ -618,7 +892,8 @@ class LiveCryptoTrader:
 
         except Exception as e:
             self.logger.error(f"Fatal error: {e}")
-            self.send_notification(f"🚨 Bot Error: {e}")
+            if self.config['notifications'].get('notify_on_error', True):
+                self.send_notification(f"🚨 Bot Error: {e}", event_type='error')
 
         finally:
             self.cleanup()

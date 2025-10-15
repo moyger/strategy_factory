@@ -81,9 +81,26 @@
         "telegram_enabled": false,
         "telegram_bot_token": "",
         "telegram_chat_id": "",
+
+        "email_enabled": false,
+        "email_provider": "gmail",
+        "email_from": "your_bot@gmail.com",
+        "email_to": "your_email@gmail.com",
+        "email_smtp_host": "smtp.gmail.com",
+        "email_smtp_port": 587,
+        "email_password": "",
+        "email_use_tls": true,
+
+        "sendgrid_api_key": "",
+        "aws_ses_region": "us-east-1",
+        "aws_access_key": "",
+        "aws_secret_key": "",
+
         "notify_on_trade": true,
         "notify_on_error": true,
-        "notify_on_stop_loss": true
+        "notify_on_stop_loss": true,
+        "notify_on_startup": true,
+        "notify_on_rebalance": true
     },
 
     "data_sources": {
