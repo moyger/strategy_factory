@@ -237,19 +237,15 @@ class LiveCryptoTrader:
             btc_symbol = self.config['strategy_params']['core_assets'][0]
             btc_prices = prices[btc_symbol]
 
-            # Generate allocations
+            # Generate allocations (returns dict from live-only version)
             allocations = self.strategy.generate_allocations(prices, btc_prices=btc_prices)
 
-            # Get latest allocations (last row)
-            latest = allocations.iloc[-1]
-
-            # Remove _STOPPED columns
-            target_allocations = {}
-            for col in latest.index:
-                if not col.endswith('_STOPPED'):
-                    alloc = latest[col]
-                    if not pd.isna(alloc) and alloc > 0:
-                        target_allocations[col] = alloc
+            # Clean strategy returns dict directly, filter out zero allocations
+            target_allocations = {
+                symbol: alloc
+                for symbol, alloc in allocations.items()
+                if alloc > 0
+            }
 
             self.logger.info(f"Target allocations: {len(target_allocations)} positions")
             for symbol, alloc in target_allocations.items():
